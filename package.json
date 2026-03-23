@@ -1,11 +1,26 @@
 {
   "name": "redxbot302",
-  "version": "6.0.0",
-  "description": "🔥 REDXBOT302 Mini – WhatsApp Bot (no SESSION_ID)",
+  "version": "5.1.0",
+  "description": "🔥 REDXBOT302 — WhatsApp Bot. Pair-only. No SESSION_ID. 200+ commands.",
   "main": "index.js",
+  "type": "commonjs",
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "dev": "node index.js",
+    "heroku-postbuild": "echo '✅ REDXBOT302 build complete'",
+    "build": "echo '✅ No build step required'"
   },
+  "engines": {
+    "node": "20.x",
+    "npm": ">=9.0.0"
+  },
+  "keywords": [
+    "whatsapp-bot",
+    "baileys",
+    "redxbot302"
+  ],
+  "author": "Abdul Rehman Rajpoot",
+  "license": "MIT",
   "dependencies": {
     "@distube/ytdl-core": "^4.13.5",
     "@ffmpeg-installer/ffmpeg": "^1.1.0",
@@ -31,8 +46,5 @@
     "socket.io": "^4.8.1",
     "wa-sticker-formatter": "^4.4.4",
     "yt-search": "^2.10.4"
-  },
-  "engines": {
-    "node": ">=20.0.0"
   }
 }
