@@ -1,41 +1,36 @@
-# ╔══════════════════════════════════════╗
-# ║   🔥 REDXBOT302 MINI — Dockerfile   ║
-# ║   Owner: Abdul Rehman Rajpoot        ║
-# ╚══════════════════════════════════════╝
+FROM node:20-alpine
 
-FROM node:20-slim
-
-# Install git + ffmpeg + build tools (git is REQUIRED by npm/baileys)
-RUN apt-get update && apt-get install -y --no-install-recommends \
+# Install system dependencies
+RUN apk add --no-cache \
     git \
     ffmpeg \
-    python3 \
-    python3-pip \
-    make \
-    g++ \
-    ca-certificates \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
+    imagemagick \
+    libwebp \
+    libwebp-tools
 
 WORKDIR /app
 
-# Copy package files FIRST for layer caching
-COPY package.json ./
+# Copy only package.json (and package-lock.json if present)
+COPY package*.json ./
 
-# Install deps — use --omit=dev (--production is deprecated and broken in Docker)
-RUN npm install --omit=dev --no-audit --no-fund --legacy-peer-deps
+# Remove any problematic dependency (if needed)
+RUN node -e "const fs = require('fs'); \
+    const pkg = JSON.parse(fs.readFileSync('package.json')); \
+    if (pkg.dependencies && pkg.dependencies['discard-api']) delete pkg.dependencies['discard-api']; \
+    if (pkg.devDependencies && pkg.devDependencies['discard-api']) delete pkg.devDependencies['discard-api']; \
+    fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));"
 
-# Copy all project files
+# Set environment variables for sharp (if needed)
+ENV npm_config_platform=linuxmusl
+ENV npm_config_arch=x64
+
+# Install dependencies (no postinstall will run now)
+RUN npm install --force --loglevel=error
+
+# Copy the rest of the application source code
 COPY . .
 
-# Create required runtime directories
-RUN mkdir -p session temp data plugins public
-
-# Expose port
 EXPOSE 3000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-  CMD curl -f http://localhost:3000/ || exit 1
-
-CMD ["node", "index.js"]
+# Start the bot
+CMD ["npm", "start"]
