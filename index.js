@@ -119,6 +119,13 @@ function adminAuth(req, res, next) {
 }
 
 // ════════════════════════════════════════════════════════
+//  HEALTH CHECK — Railway/Render/Heroku require this
+// ════════════════════════════════════════════════════════
+app.get('/health', (_, res) => res.status(200).json({ status: 'ok', uptime: process.uptime() }));
+app.get('/healthz', (_, res) => res.status(200).send('OK'));
+app.get('/ping',   (_, res) => res.status(200).send('pong'));
+
+// ════════════════════════════════════════════════════════
 //  PUBLIC API ROUTES
 // ════════════════════════════════════════════════════════
 app.get('/api/status', (_, res) => res.json({
@@ -747,7 +754,7 @@ function welcomeMsg(phone, deployId) {
 // ════════════════════════════════════════════════════════
 //  START
 // ════════════════════════════════════════════════════════
-server.listen(PORT, async () => {
+server.listen(PORT, '0.0.0.0', async () => {
   console.log(`
 ╔══════════════════════════════════════════╗
 ║   🔥 REDXBOT302 v6.0.0 Started!         ║
@@ -757,13 +764,20 @@ server.listen(PORT, async () => {
 ║   🔌 Plugins: ${String(commands.size).padEnd(27)}║
 ║   🌍 Mode   : ${global.BOT_MODE.toUpperCase().padEnd(27)}║
 ╠══════════════════════════════════════════╣
-║   🌐 Public : http://localhost:${PORT}/        ║
-║   🔒 Admin  : http://localhost:${PORT}/admin   ║
-║   User: ${ADMIN_USER.padEnd(33)}║
-║   Pass: ${ADMIN_PASS.padEnd(33)}║
+║   🌐 Public : http://0.0.0.0:${PORT}/         ║
+║   🔒 Admin  : http://0.0.0.0:${PORT}/admin    ║
+║   🏥 Health : http://0.0.0.0:${PORT}/health   ║
 ╚══════════════════════════════════════════╝
 `);
   await restoreAll();
 });
+
+server.on('error', (err) => {
+  console.error('❌ Server error:', err.message);
+  process.exit(1);
+});
+
+process.on('uncaughtException',  (e) => console.error('Uncaught:', e.message));
+process.on('unhandledRejection', (e) => console.error('Unhandled:', e));
 
 module.exports = { app, server };

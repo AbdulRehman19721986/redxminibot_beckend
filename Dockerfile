@@ -1,16 +1,10 @@
-# ╔══════════════════════════════════════╗
-# ║   🔥 REDXBOT302 MINI — Dockerfile   ║
-# ║   Owner: Abdul Rehman Rajpoot        ║
-# ╚══════════════════════════════════════╝
-
 FROM node:20-slim
 
-# Install git + ffmpeg + build tools (git is REQUIRED by npm/baileys)
+# Install system dependencies needed by Baileys / canvas / sharp
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     ffmpeg \
     python3 \
-    python3-pip \
     make \
     g++ \
     ca-certificates \
@@ -19,23 +13,24 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
-# Copy package files FIRST for layer caching
+# Copy package files first (cache layer)
 COPY package.json ./
 
-# Install deps — use --omit=dev (--production is deprecated and broken in Docker)
+# Install dependencies
 RUN npm install --omit=dev --no-audit --no-fund --legacy-peer-deps
 
-# Copy all project files
+# Copy all source files
 COPY . .
 
-# Create required runtime directories
-RUN mkdir -p session temp data plugins public
+# Create required directories
+RUN mkdir -p sessions data plugins public
 
 # Expose port
 EXPOSE 3000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-  CMD curl -f http://localhost:3000/ || exit 1
+# Health check — Railway polls /health every 30s
+HEALTHCHECK --interval=30s --timeout=10s --start-period=20s --retries=3 \
+  CMD curl -f http://localhost:3000/health || exit 1
 
+# Start bot
 CMD ["node", "index.js"]
