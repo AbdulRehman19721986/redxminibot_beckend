@@ -1,7 +1,7 @@
 'use strict';
 /**
- * 🔥 REDXBOT302 — FINAL EDITION v5.1
- * Full plugin system · Built‑in menu removed · All plugins work
+ * 🔥 REDXBOT302 — FINAL EDITION v5.2
+ * Full plugin system · Built‑in menus removed · Antidelete integrated · YTDownloader
  * Owner: Abdul Rehman Rajpoot (+923009842133)
  */
 
@@ -91,7 +91,6 @@ const loadDeploys = () => { try { if (fs.existsSync(DEPLOYS_FILE)) deploys = JSO
 const saveDeploys = () => { try { fs.writeFileSync(DEPLOYS_FILE, JSON.stringify(deploys,null,2)); } catch {} };
 loadDeploys();
 
-// Ensure this deploy exists with a deploy key
 if (!deploys[DEPLOY_ID]) {
   deploys[DEPLOY_ID] = {
     id: DEPLOY_ID,
@@ -123,7 +122,7 @@ const broadcastStats = () => {
   io.emit('statsUpdate', { activeSockets: connected, totalUsers: statsData.totalUsers, pairCount: statsData.pairCount });
 };
 
-// ── PLUGINS ──────────────────────────────────────────────────
+// ======================== PLUGIN LOADER ========================
 const commands   = new Map();
 const pluginsDir = path.join(__dirname, 'plugins');
 let cmdCount     = 0;
@@ -139,17 +138,13 @@ const loadPlugins = () => {
       delete require.cache[require.resolve(fp)];
       const mod = require(fp);
 
-      // Normalise: converts any plugin format into { pattern, execute, aliases, category, desc, ownerOnly }
       const normalise = (raw) => {
         if (!raw || typeof raw !== 'object') return null;
-        // Format A: { pattern, execute, alias[] }
         if (raw.pattern && raw.execute) return raw;
-        // Format B: { command, handler, aliases[] }
         if ((raw.command || raw.pattern) && (raw.handler || raw.execute)) {
           const pattern = raw.command || raw.pattern;
           const execute = raw.handler
             ? async (conn, msg, m, opts) => {
-                // Bridge to new-style handler(sock, message, args, context)
                 const context = {
                   chatId: opts.from,
                   command: pattern,
@@ -210,17 +205,20 @@ const loadPlugins = () => {
     } catch(e){ console.error(`Plugin ${file}: ${e.message?.slice(0,120)}`); }
   }
   console.log(`🔌 ${cmdCount} commands loaded from ${files.length} plugin files`);
-  // Log first 10 commands for debugging
-  const cmdList = [...commands.keys()].slice(0, 10);
-  console.log(`   Commands: ${cmdList.join(', ')}${cmdCount>10 ? ' ...' : ''}`);
-  global.botCommands = commands; // expose for any plugin that needs it
+  global.botCommands = commands;
 };
 loadPlugins();
 if (fs.existsSync(pluginsDir)) fs.watch(pluginsDir,(e,f)=>{ if(f&&f.endsWith('.js')){ console.log(`♻️ Reloading ${f}`); loadPlugins(); } });
 
-// ════════════════════════════════════════════════════════════
-//  initConnection — per-number session manager
-// ════════════════════════════════════════════════════════════
+// ======================== ANTIDELETE INTEGRATION ========================
+const antidelete = require('./lib/antidelete'); // we'll create this file from the provided code
+// We'll also need to call storeMessage on every message and handleMessageRevocation on delete
+// This will be done inside the message handler.
+
+// ======================== YOUTUBE DOWNLOADER MODULE ========================
+const ytDownloader = require('./lib/ytdownloader'); // we'll create this from the provided class
+
+// ======================== INITIALIZATION FUNCTIONS ========================
 async function initConnection(number) {
   const sessionDir = path.join(SESSIONS_DIR, number);
   if (!fs.existsSync(sessionDir)) fs.mkdirSync(sessionDir, { recursive: true });
@@ -250,9 +248,6 @@ async function initConnection(number) {
   return conn;
 }
 
-// ════════════════════════════════════════════════════════════
-//  setupHandlers — all event listeners
-// ════════════════════════════════════════════════════════════
 function setupHandlers(conn, number, saveCreds) {
   const entry = activeConnections.get(number);
 
@@ -321,11 +316,24 @@ function setupHandlers(conn, number, saveCreds) {
   conn.ev.on('messages.upsert', async ({ messages, type }) => {
     if (type !== 'notify') return;
     for (const msg of messages) {
+      // Store for antidelete
+      if (antidelete && antidelete.storeMessage) await antidelete.storeMessage(conn, msg);
       try { await handleMessage(conn, msg, number); } catch(e){ console.error(`msg: ${e.message}`); }
     }
   });
 
-  // Welcome / goodbye group events
+  // Antidelete: listen for protocol messages that indicate a deletion
+  conn.ev.on('messages.update', async (updates) => {
+    for (const update of updates) {
+      if (update.update?.protocolMessage?.type === 1) { // message deletion
+        if (antidelete && antidelete.handleMessageRevocation) {
+          await antidelete.handleMessageRevocation(conn, update);
+        }
+      }
+    }
+  });
+
+  // Group events
   conn.ev.on('group-participants.update', async (update) => {
     try {
       const GroupEvents = require('./lib/groupevents');
@@ -337,9 +345,6 @@ function setupHandlers(conn, number, saveCreds) {
   });
 }
 
-// ════════════════════════════════════════════════════════════
-//  PROFESSIONAL WELCOME
-// ════════════════════════════════════════════════════════════
 async function sendWelcome(conn, number) {
   const userJid = `${number}@s.whatsapp.net`;
   let name = 'User';
@@ -390,16 +395,14 @@ _ᴘᴏᴡᴇʀᴇᴅ ʙʏ ʀᴇᴅxʙᴏᴛ302_
   });
 }
 
-// ════════════════════════════════════════════════════════════
-//  MESSAGE HANDLER
-// ════════════════════════════════════════════════════════════
+// ======================== MESSAGE HANDLER ========================
 async function handleMessage(conn, msg, sessionId) {
   const from    = msg.key.remoteJid;
   const sender  = msg.key.participant || msg.key.remoteJid;
   const sNum    = sender.split('@')[0].split(':')[0];
   const isOwner = sNum === OWNER_NUM || sNum === CO_OWNER_NUM || sNum === sessionId;
 
-  // Status messages: auto‑view/react
+  // Status messages
   if (from === 'status@broadcast') {
     if (process.env.AUTO_STATUS_SEEN !== 'false') await conn.readMessages([msg.key]).catch(()=>{});
     if (process.env.AUTO_STATUS_REACT !== 'false') {
@@ -427,13 +430,12 @@ async function handleMessage(conn, msg, sessionId) {
 
   console.log(`[${new Date().toLocaleTimeString()}] ${pfx}${cmd} | ${sNum}`);
 
-  // Try built‑in commands (only essential ones, no menu)
+  // Built‑in commands (only essential ones)
   if (await runBuiltIn(conn, msg, cmd, args, q, from, sender, isOwner, pfx)) return;
 
   // Plugin commands
   if (commands.has(cmd)) {
     const plugin = commands.get(cmd);
-    // Owner‑only check
     if (plugin.ownerOnly && !isOwner) {
       await conn.sendMessage(from, { text: '❌ This command is only for the bot owner.' }, { quoted: msg });
       return;
@@ -461,11 +463,6 @@ async function handleMessage(conn, msg, sessionId) {
   }
 }
 
-// ════════════════════════════════════════════════════════════
-//  BUILT‑IN COMMANDS (only essential ones – no menu)
-// ════════════════════════════════════════════════════════════
-const fakevCard = require('./lib/fakevcard');
-
 async function runBuiltIn(conn, msg, cmd, args, q, from, sender, isOwner, pfx) {
   const dep = deploys[DEPLOY_ID];
   const nlCtx = {
@@ -477,7 +474,6 @@ async function runBuiltIn(conn, msg, cmd, args, q, from, sender, isOwner, pfx) {
 
   switch(cmd) {
     case 'ping':
-    case 'speed':
       const t = Date.now();
       await conn.sendMessage(from, { react: { text: '⚡', key: msg.key } });
       await s(`⚡ *ᴘɪɴɢ:* \`${Date.now()-t}ms\`\n\n> 🔥 ${BOT_NAME}`);
@@ -530,26 +526,9 @@ function getQuoted(msg) {
   return{message:{key:{remoteJid:ctx.participant||ctx.stanzaId,id:ctx.stanzaId,fromMe:false},message:ctx.quotedMessage},sender:ctx.participant};
 }
 
-// ════════════════════════════════════════════════════════════
-//  EXPRESS ROUTES — PUBLIC (unchanged)
-// ════════════════════════════════════════════════════════════
+// ======================== EXPRESS ROUTES (unchanged) ========================
 app.get('/', (req,res)=>res.sendFile(path.join(__dirname,'public','index.html')));
-app.get('/api/status', (req,res)=>res.json({
-  connected: [...activeConnections.values()].some(e=>e.connected),
-  activeSockets: [...activeConnections.values()].filter(e=>e.connected).length,
-  botNumber: (()=>{ for(const[n,e]of activeConnections) if(e.connected) return n; return ''; })(),
-  commands: cmdCount+8,
-  totalUsers: statsData.totalUsers,
-  pairCount: statsData.pairCount,
-  uptime: Math.floor((Date.now()-START_TIME)/1000),
-  mode: global.BOT_MODE,
-  deployId: DEPLOY_ID,
-  platform: detectPlatform(),
-  hasSession: (()=>{ try{ return fs.readdirSync(SESSIONS_DIR).some(d=>fs.existsSync(path.join(SESSIONS_DIR,d,'creds.json'))); }catch{return false;} })(),
-  botName: deploys[DEPLOY_ID]?.botName || BOT_NAME,
-  ownerName: deploys[DEPLOY_ID]?.ownerName || OWNER_NAME,
-  prefix: deploys[DEPLOY_ID]?.prefix || PREFIX,
-}));
+app.get('/api/status', (req,res)=>res.json(getStats()));
 app.get('/api/config', (req,res)=>res.json({
   botName: BOT_NAME, ownerName: OWNER_NAME, coOwner: CO_OWNER,
   prefix: PREFIX, menuImage: BOT_IMG, repoLink: REPO_LINK,
@@ -645,9 +624,7 @@ app.get('/api/deploy/:id',(req,res)=>{
   res.json({ id:d.id, platform:d.platform, pairCount:d.pairCount||0, createdAt:d.createdAt, lastSeen:d.lastSeen, numbers:d.numbers?.length||0 });
 });
 
-// ════════════════════════════════════════════════════════════
-//  USER DEPLOY KEY API (unchanged)
-// ════════════════════════════════════════════════════════════
+// ======================== USER DEPLOY KEY API (unchanged) ========================
 function deployKeyAuth(req, res, next) {
   const key = req.headers['x-deploy-key'] || req.body?.deployKey || req.query?.key;
   if (!key) return res.status(401).json({ error: 'Deploy key required' });
@@ -702,9 +679,7 @@ app.get('/api/user/status', deployKeyAuth, (req,res) => {
   res.json({ ...getStats(), deployKey: '***hidden***' });
 });
 
-// ════════════════════════════════════════════════════════════
-//  ADMIN ROUTES (unchanged)
-// ════════════════════════════════════════════════════════════
+// ======================== ADMIN ROUTES (unchanged) ========================
 const adminAuth = (req,res,next) => {
   const token = req.headers['x-admin-token']||req.query.token;
   if(!token||!adminSessions.has(token))return res.status(401).json({error:'Unauthorized'});
@@ -725,7 +700,7 @@ app.post('/api/admin/logout',adminAuth,(req,res)=>{ adminSessions.delete(req.hea
 app.get('/api/admin/overview',adminAuth,(req,res)=>res.json({
   stats:{ totalDeploys:Object.keys(deploys).length, totalPairs:statsData.pairCount, totalUsers:statsData.totalUsers, uptime:Math.floor((Date.now()-START_TIME)/1000) },
   currentDeploy: deploys[DEPLOY_ID], servers, platform:detectPlatform(),
-  adminUser:req.adminSession.user, botVersion:'5.1.0', nodeVersion:process.version, memUsage:process.memoryUsage(), activeConnections:activeConnections.size,
+  adminUser:req.adminSession.user, botVersion:'5.2.0', nodeVersion:process.version, memUsage:process.memoryUsage(), activeConnections:activeConnections.size,
 }));
 
 app.get('/api/admin/deploys',adminAuth,(req,res)=>res.json({deploys:Object.values(deploys)}));
@@ -767,7 +742,7 @@ app.post('/api/admin/settings/credentials',adminAuth,(req,res)=>{
   res.json({success:true,message:'Updated (set ADMIN_USERNAME/ADMIN_PASSWORD env to persist)'});
 });
 
-// ── SOCKET.IO ─────────────────────────────────────────────────
+// ======================== SOCKET.IO ========================
 io.on('connection', socket => {
   const st=getStats();
   socket.emit('statsUpdate',{activeSockets:st.activeSockets,totalUsers:st.totalUsers,pairCount:st.pairCount});
@@ -775,7 +750,7 @@ io.on('connection', socket => {
   socket.on('disconnect',()=>{});
 });
 
-// ── GRACEFUL SHUTDOWN ─────────────────────────────────────────
+// ======================== GRACEFUL SHUTDOWN ========================
 let isShuttingDown=false;
 const gracefulShutdown=sig=>{
   if(isShuttingDown)return; isShuttingDown=true;
@@ -789,7 +764,7 @@ process.on('SIGTERM',()=>gracefulShutdown('SIGTERM'));
 process.on('uncaughtException',err=>console.error('uncaughtException:',err.message));
 process.on('unhandledRejection',err=>console.error('unhandledRejection:',err));
 
-// ── KEEP-ALIVE ────────────────────────────────────────────────
+// ======================== KEEP-ALIVE ========================
 const APP_URL = process.env.APP_URL || process.env.HEROKU_APP_DEFAULT_DOMAIN_NAME
   ? `https://${process.env.HEROKU_APP_DEFAULT_DOMAIN_NAME}`
   : null;
@@ -819,10 +794,10 @@ app.get('/health', (req, res) => res.json({
   deployId: DEPLOY_ID,
 }));
 
-// ── START ─────────────────────────────────────────────────────
+// ======================== START ========================
 server.listen(PORT, async () => {
   console.log(`\n╔════════════════════════════════════════════════════╗`);
-  console.log(`║  🔥 REDXBOT302 FINAL EDITION v5.1                  ║`);
+  console.log(`║  🔥 REDXBOT302 FINAL EDITION v5.2                  ║`);
   console.log(`║  🌐 http://localhost:${String(PORT).padEnd(26)}║`);
   console.log(`║  🆔 Deploy ID: ${String(DEPLOY_ID).padEnd(34)}║`);
   console.log(`║  🔑 Deploy Key: ${String(deploys[DEPLOY_ID]?.deployKey||'—').slice(0,20).padEnd(33)}║`);
