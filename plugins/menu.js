@@ -1,106 +1,114 @@
-/**
- * REDXBOT302 - Menu Plugin
- */
+// plugins/menu.js
 const settings = require('../settings');
-const CH = {
-  contextInfo: {
-    forwardingScore: 1, isForwarded: true,
-    forwardedNewsletterMessageInfo: {
-      newsletterJid: '120363405513439052@newsletter',
-      newsletterName: 'REDXBOT302', serverMessageId: -1
+const commandHandler = require('../lib/commandHandler');
+const store = require('../lib/lightweight_store');
+const { getPairedUsers } = require('../lib/pairing'); // you need to implement this
+
+module.exports = {
+    command: 'menu',
+    aliases: ['help', 'cmds'],
+    category: 'main',
+    description: 'Show categorized menu with numbers',
+    usage: '.menu',
+
+    async handler(sock, message, args, context) {
+        const { chatId, sender, channelInfo } = context;
+        const isOwner = settings.ownerNumber.split(',').includes(sender.split('@')[0]);
+
+        // Check if user is paired (only for non‑owner commands)
+        const pairedUsers = await getPairedUsers(); // returns array of JIDs
+        const isPaired = isOwner || pairedUsers.includes(sender);
+
+        // Get dynamic prefix
+        const prefix = await store.getSetting('global', 'prefix') || settings.prefix || '.';
+
+        // Get command categories from handler
+        const categories = Array.from(commandHandler.categories.keys()).sort();
+
+        // Build the menu with numbers
+        let menuText = `╭┈───〔 *REDXBOT302* 〕───⊷\n`;
+        menuText += `├▢ 🤖 *Owner:* ${settings.botOwner} & ${settings.secondOwner}\n`;
+        menuText += `├▢ 🪄 *Prefix:* ${prefix}\n`;
+        menuText += `├▢ 🎐 *Version:* ${settings.version}\n`;
+        menuText += `├▢ ☁️ *Platform:* ${settings.platform.toUpperCase()}\n`;
+        menuText += `├▢ 📜 *Plugins:* ${commandHandler.commands.size}\n`;
+        menuText += `├▢ ⏰ *Runtime:* ${formatUptime(process.uptime())}\n`;
+        menuText += `╰───────────────────⊷\n`;
+        menuText += `╭───⬡ SELECT MENU ⬡───\n`;
+
+        let index = 1;
+        for (const cat of categories) {
+            const cmdCount = commandHandler.getCommandsByCategory(cat).length;
+            if (cmdCount === 0) continue;
+            menuText += `┋ ⬡ ${index} ${cat.toUpperCase()} (${cmdCount})\n`;
+            index++;
+        }
+        menuText += `╰───────────────────⊷\n\n`;
+        menuText += `> *Reply with the number to select menu (1-${categories.length})*`;
+
+        // Send the menu
+        const sentMsg = await sock.sendMessage(chatId, {
+            text: menuText,
+            ...channelInfo
+        }, { quoted: message });
+
+        const msgId = sentMsg.key.id;
+
+        // Wait for reply
+        const listener = async (update) => {
+            const msg = update.messages?.[0];
+            if (!msg?.message) return;
+
+            const replyTo = msg.message.extendedTextMessage?.contextInfo?.stanzaId;
+            if (replyTo !== msgId) return;
+
+            const choice = parseInt((msg.message.conversation || msg.message.extendedTextMessage?.text || '').trim());
+            if (isNaN(choice) || choice < 1 || choice > categories.length) {
+                await sock.sendMessage(chatId, {
+                    text: '❌ Invalid number. Please send a number between 1 and ' + categories.length,
+                    ...channelInfo
+                }, { quoted: msg });
+                return;
+            }
+
+            sock.ev.off('messages.upsert', listener);
+
+            const selectedCat = categories[choice - 1];
+            const commands = commandHandler.getCommandsByCategory(selectedCat);
+
+            // Filter commands based on paired status
+            const filtered = commands.filter(cmd => {
+                const cmdObj = commandHandler.commands.get(cmd);
+                if (cmdObj.ownerOnly && !isOwner) return false;
+                if (!isPaired && !cmdObj.public) return false; // if you have a `public` flag
+                return true;
+            });
+
+            if (!filtered.length) {
+                await sock.sendMessage(chatId, {
+                    text: `❌ No commands available in *${selectedCat}* for you.`,
+                    ...channelInfo
+                }, { quoted: msg });
+                return;
+            }
+
+            const list = filtered.map(cmd => `┋ ➜ ${cmd}`).join('\n');
+            const catText = `『 *${selectedCat.toUpperCase()}* 』\n╭───────────────┄┈╮\n${list}\n╰───────────────┄┈╯`;
+
+            await sock.sendMessage(chatId, {
+                text: catText,
+                ...channelInfo
+            }, { quoted: msg });
+        };
+
+        sock.ev.on('messages.upsert', listener);
+        setTimeout(() => sock.ev.off('messages.upsert', listener), 60 * 1000); // 1 minute timeout
     }
-  }
 };
 
-const CATEGORIES = {
-  ai:          { emoji: '🤖', label: 'AI & Chat',       cmds: ['gpt','gemini','llama','mistral','aify','imagine','summarize','explain','analyze'] },
-  downloaders: { emoji: '📥', label: 'Downloaders',     cmds: ['tiktok','ytmp3','ytmp4','spotify','instagram','facebook','twitter','pinterest','soundcloud','mediafire'] },
-  fun:         { emoji: '🎉', label: 'Fun & Games',     cmds: ['joke','fact','truth','dare','flirt','wyr','8ball','ship','rate','iq','roast','compliment','trivia','dice','coin','slot','simp'] },
-  tools:       { emoji: '🔧', label: 'Tools',           cmds: ['ping','calc','weather','wiki','translate','tts','qr','shorturl','base64','password','crypto','news','screenshot','github','imdb','lyrics','styletext'] },
-  groups:      { emoji: '👥', label: 'Group Mgmt',      cmds: ['kick','promote','demote','mute','unmute','tagall','hidetag','groupinfo','invitelink','setgname','setgdesc','warn','delete'] },
-  music:       { emoji: '🎵', label: 'Music',           cmds: ['play','song','mp3','audiofx','bass','nightcore'] },
-  sticker:     { emoji: '🎨', label: 'Stickers',        cmds: ['sticker','toimg'] },
-  owner:       { emoji: '👑', label: 'Owner Only',      cmds: ['autoread','autoreply','autostatus','autotyping','pmblocker','autoforward','uptime','restart','botname','botdesc'] },
-  info:        { emoji: 'ℹ️', label: 'Info',            cmds: ['owner','botinfo','deployid','menu','alive'] },
-};
-
-const plugins = [
-
-{
-  command: 'menu', aliases: ['help', 'cmds', 'commands', 'start'], category: 'info',
-  description: 'Show bot commands menu', usage: '.menu [category]',
-  async handler(sock, message, args, context) {
-    const chatId = context.chatId || message.key.remoteJid;
-    const P = settings.prefix;
-    const sub = args[0]?.toLowerCase();
-
-    // Category menu
-    if (sub && CATEGORIES[sub]) {
-      const cat = CATEGORIES[sub];
-      const cmdList = cat.cmds.map(c => `  ${P}${c}`).join('\n');
-      return sock.sendMessage(chatId, {
-        text: `${cat.emoji} *${cat.label.toUpperCase()}*\n${'─'.repeat(25)}\n\n${cmdList}\n\n${'─'.repeat(25)}\n💡 Type ${P}<command> to use`,
-        ...CH
-      }, { quoted: message });
-    }
-
-    // Main menu
-    const catLines = Object.entries(CATEGORIES)
-      .map(([key, c]) => `${c.emoji} *${c.label}* — \`${P}menu ${key}\`\n    ${c.cmds.length} commands`)
-      .join('\n\n');
-
-    const totalCmds = Object.values(CATEGORIES).reduce((acc, c) => acc + c.cmds.length, 0);
-
-    const menuText =
-`╔══════════════════════════╗
-║  🔥  *REDXBOT302*  🔥   ║
-╚══════════════════════════╝
-
-👑 *Owner:* ${settings.botOwner}
-🌍 *Mode:* ${settings.mode}
-📌 *Prefix:* \`${P}\`
-📦 *Total Commands:* ${totalCmds}+
-━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-📋 *COMMAND CATEGORIES*
-━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-${catLines}
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━
-💡 Type \`${P}menu <category>\` to see commands
-Example: \`${P}menu ai\` | \`${P}menu fun\``;
-
-    await sock.sendMessage(chatId, { text: menuText, ...CH }, { quoted: message });
-  }
-},
-
-{
-  command: 'alive', aliases: ['status', 'bot'], category: 'info',
-  description: 'Check if bot is alive', usage: '.alive',
-  async handler(sock, message, args, context) {
-    const chatId = context.chatId || message.key.remoteJid;
-    const uptime = process.uptime();
-    const h = Math.floor(uptime/3600), m = Math.floor((uptime%3600)/60);
-    await sock.sendMessage(chatId, {
-      text: `*╔═══════════════════════╗*\n*║  🔥 REDXBOT302  🔥  ║*\n*╚═══════════════════════╝*\n\n✅ *Bot is ONLINE!*\n\n🤖 *Bot:* ${settings.botName}\n👑 *Owner:* ${settings.botOwner}\n📌 *Prefix:* ${settings.prefix}\n🌍 *Mode:* ${settings.mode}\n⏱️ *Uptime:* ${h}h ${m}m\n💾 *RAM:* ${Math.round(process.memoryUsage().heapUsed/1024/1024)}MB\n\n🚀 _Type ${settings.prefix}menu for commands_`,
-      ...CH
-    }, { quoted: message });
-  }
-},
-
-{
-  command: 'botinfo', aliases: ['info', 'about'], category: 'info',
-  description: 'Get bot information', usage: '.botinfo',
-  async handler(sock, message, args, context) {
-    const chatId = context.chatId || message.key.remoteJid;
-    await sock.sendMessage(chatId, {
-      text: `*🤖 BOT INFORMATION*\n\n🔥 *Name:* ${settings.botName}\n👑 *Owner:* ${settings.botOwner}\n👤 *Co-Owner:* ${settings.coOwner}\n📌 *Prefix:* ${settings.prefix}\n🌍 *Mode:* ${settings.mode}\n⏱️ *Uptime:* ${Math.floor(process.uptime()/3600)}h ${Math.floor((process.uptime()%3600)/60)}m\n💾 *RAM:* ${Math.round(process.memoryUsage().heapUsed/1024/1024)}MB\n🔧 *Node:* ${process.version}\n\n🌐 GitHub: https://github.com/AbdulRehman19721986/redxbot302`,
-      ...CH
-    }, { quoted: message });
-  }
-},
-
-];
-
-module.exports = plugins;
+function formatUptime(seconds) {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = Math.floor(seconds % 60);
+    return `${h}h ${m}m ${s}s`;
+}
