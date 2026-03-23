@@ -1,6 +1,4 @@
 // plugins/allmenu.js
-const settings = require('../settings');
-
 module.exports = {
     command: 'allmenu',
     aliases: ['allcmd', 'fullmenu'],
@@ -35,7 +33,7 @@ module.exports = {
         menu += `├■ ☁️ Platform: ${config.platform || 'Local'}\n`;
         menu += `├■ 📦 Prefix: ${prefix}\n`;
         menu += `├■ ⚙️ Mode: ${config.mode.toUpperCase()}\n`;
-        menu += `├■ 🖼️ Version: 5.2.0\n`;
+        menu += `├■ 🖼️ Version: 6.0.0\n`;
         menu += `╰───────────────┄┈╯\n\n`;
 
         const sortedCats = [...categories.keys()].sort();
