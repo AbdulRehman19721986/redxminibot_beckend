@@ -4,600 +4,880 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>REDXBOT302 — Portal</title>
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <style>
-/*═══════════════════════════════════════════
-  RESET & TOKENS
-═══════════════════════════════════════════*/
+/* ═══════════════════════════════════════
+   RESET & TOKENS
+═══════════════════════════════════════ */
 *,::before,::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#04060c;
-  --s1:#080e1a;
-  --s2:#0c1424;
-  --s3:#111d30;
-  --s4:#16233a;
-  --b1:rgba(255,255,255,.06);
-  --b2:rgba(255,255,255,.11);
-  --b3:rgba(255,255,255,.18);
-  --fire:#ff4d1c;
-  --fire2:#ff7a45;
-  --fireglow:rgba(255,77,28,.22);
-  --ember:#ffac72;
-  --green:#10b981;--gbg:rgba(16,185,129,.1);--gbdr:rgba(16,185,129,.25);
-  --red:#f43f5e;  --rbg:rgba(244,63,94,.1); --rbdr:rgba(244,63,94,.25);
-  --amber:#f59e0b;--abg:rgba(245,158,11,.1);--abdr:rgba(245,158,11,.25);
-  --blue:#3b82f6; --bbg:rgba(59,130,246,.1);
-  --purple:#a855f7;
-  --t1:#eef2fa;--t2:#8da3bf;--t3:#3d5470;
-  --ff:'Outfit',sans-serif;
-  --mono:'JetBrains Mono',monospace;
+  --bg:#020409;--s1:#060c16;--s2:#0a1628;--s3:#0f1f38;--s4:#152744;
+  --b1:rgba(255,255,255,.05);--b2:rgba(255,255,255,.1);--b3:rgba(255,255,255,.2);
+  --fire:#ff4d1c;--fire2:#ff7a45;--fireglow:rgba(255,77,28,.3);
+  --ember:#ffac72;--coal:#1a0800;
+  --neon:#00f5ff;--neon2:#00bcd4;--neonglow:rgba(0,245,255,.25);
+  --green:#00e676;--gbg:rgba(0,230,118,.08);--gbdr:rgba(0,230,118,.25);
+  --red:#ff1744;--rbg:rgba(255,23,68,.08);--rbdr:rgba(255,23,68,.25);
+  --amber:#ffd740;--abg:rgba(255,215,64,.08);--abdr:rgba(255,215,64,.25);
+  --blue:#2979ff;--purple:#d500f9;
+  --t1:#e8f4ff;--t2:#7a9ab5;--t3:#2a3d52;
+  --ff-head:'Orbitron',monospace;
+  --ff-body:'Rajdhani',sans-serif;
+  --ff-sub:'Inter',sans-serif;
+  --ff-mono:'JetBrains Mono',monospace;
   --r:12px;--rs:8px;--rl:18px;
+  --transition:all .25s cubic-bezier(.4,0,.2,1);
 }
-html,body{min-height:100%;background:var(--bg);color:var(--t1);font-family:var(--ff);font-size:14px;line-height:1.6;overflow-x:hidden}
+html{scroll-behavior:smooth}
+body{
+  min-height:100vh;background:var(--bg);color:var(--t1);
+  font-family:var(--ff-body);font-size:15px;line-height:1.6;
+  overflow-x:hidden;
+}
 
-/* Noise */
-body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.02;
-  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+/* ── NOISE OVERLAY ── */
+body::before{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  opacity:.018;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size:128px;
+}
 
-/* Ambient orbs */
-.orb{position:fixed;border-radius:50%;pointer-events:none;z-index:0;filter:blur(110px);animation:orbdrift 18s ease-in-out infinite}
-.orb-1{width:600px;height:600px;top:-200px;right:-100px;background:radial-gradient(circle,rgba(255,77,28,.1),transparent 70%)}
-.orb-2{width:500px;height:500px;bottom:-150px;left:-120px;background:radial-gradient(circle,rgba(59,130,246,.07),transparent 70%);animation-delay:-9s}
-@keyframes orbdrift{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(30px,20px) scale(1.05)}}
+/* ── 3D GRID BACKGROUND ── */
+body::after{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:
+    linear-gradient(rgba(0,245,255,.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,245,255,.04) 1px, transparent 1px);
+  background-size:48px 48px;
+  transform:perspective(800px) rotateX(12deg);
+  transform-origin:50% 0;
+  mask-image:linear-gradient(to bottom, transparent 0%, black 20%, black 70%, transparent 100%);
+}
 
-/*═══════════════════════════════════════════
-  SHARED COMPONENTS
-═══════════════════════════════════════════*/
-.z1{position:relative;z-index:1}
+/* ── AMBIENT ORBS ── */
+.orb{position:fixed;border-radius:50%;pointer-events:none;z-index:0;filter:blur(120px);animation:drift 20s ease-in-out infinite}
+.orb1{width:700px;height:700px;top:-200px;right:-150px;background:radial-gradient(circle,rgba(255,77,28,.12) 0%,transparent 70%)}
+.orb2{width:600px;height:600px;bottom:-180px;left:-180px;background:radial-gradient(circle,rgba(0,245,255,.08) 0%,transparent 70%);animation-delay:-10s}
+.orb3{width:400px;height:400px;top:40%;left:40%;background:radial-gradient(circle,rgba(213,0,249,.05) 0%,transparent 70%);animation-delay:-5s}
+@keyframes drift{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(30px,-20px) scale(1.05)}66%{transform:translate(-20px,30px) scale(.97)}}
 
-/* Card */
-.card{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:20px}
+/* ── SCANLINES ── */
+.scanlines{position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.03;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.8) 2px,rgba(0,0,0,.8) 4px)}
+
+/* ═══════════════════════════════════════
+   NAV BAR + BURGER MENU
+═══════════════════════════════════════ */
+.navbar{
+  position:fixed;top:0;left:0;right:0;z-index:1000;
+  background:rgba(2,4,9,.85);backdrop-filter:blur(20px) saturate(180%);
+  border-bottom:1px solid rgba(0,245,255,.1);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 24px;height:60px;
+  transition:var(--transition);
+}
+.navbar.scrolled{background:rgba(2,4,9,.95);border-bottom-color:rgba(0,245,255,.2)}
+
+.nav-logo{display:flex;align-items:center;gap:12px;text-decoration:none;cursor:pointer}
+.nav-flame{
+  width:36px;height:36px;border-radius:10px;
+  background:linear-gradient(135deg,var(--fire),var(--ember));
+  display:flex;align-items:center;justify-content:center;font-size:1.1rem;
+  box-shadow:0 4px 20px var(--fireglow);
+  animation:flamepulse 3s ease-in-out infinite;
+}
+@keyframes flamepulse{0%,100%{box-shadow:0 4px 20px var(--fireglow)}50%{box-shadow:0 4px 35px rgba(255,77,28,.55)}}
+.nav-brand{
+  font-family:var(--ff-head);font-size:.9rem;font-weight:700;letter-spacing:.12em;
+  background:linear-gradient(135deg,var(--fire),var(--ember));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.nav-brand span{display:block;font-family:var(--ff-sub);font-size:.6rem;font-weight:400;letter-spacing:.08em;color:var(--t3);-webkit-text-fill-color:var(--t3)}
+
+.nav-links{display:flex;align-items:center;gap:4px}
+.nav-link{
+  padding:7px 14px;border-radius:var(--rs);font-family:var(--ff-body);font-size:.82rem;
+  font-weight:600;color:var(--t2);cursor:pointer;transition:var(--transition);
+  border:none;background:transparent;letter-spacing:.06em;text-transform:uppercase;
+}
+.nav-link:hover{color:var(--neon);background:rgba(0,245,255,.06)}
+.nav-link.active{color:var(--neon);background:rgba(0,245,255,.1)}
+
+.nav-right{display:flex;align-items:center;gap:10px}
+.nav-status{
+  display:flex;align-items:center;gap:6px;font-family:var(--ff-sub);font-size:.7rem;
+  background:var(--gbg);border:1px solid var(--gbdr);border-radius:50px;
+  padding:4px 12px;color:var(--green);letter-spacing:.05em;text-transform:uppercase;
+}
+.status-dot{width:6px;height:6px;border-radius:50%;background:var(--green);
+  box-shadow:0 0 8px var(--green);animation:statusblink 2s ease-in-out infinite}
+@keyframes statusblink{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* Burger */
+.burger{
+  display:none;flex-direction:column;gap:5px;cursor:pointer;padding:8px;
+  border:none;background:transparent;
+}
+.burger span{display:block;width:22px;height:2px;background:var(--t2);border-radius:2px;transition:var(--transition)}
+.burger.open span:nth-child(1){transform:translateY(7px) rotate(45deg)}
+.burger.open span:nth-child(2){opacity:0;transform:scaleX(0)}
+.burger.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+
+/* Mobile drawer */
+.mobile-drawer{
+  position:fixed;top:60px;left:0;right:0;bottom:0;z-index:999;
+  background:rgba(2,4,9,.98);backdrop-filter:blur(30px);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
+  transform:translateX(100%);transition:transform .35s cubic-bezier(.4,0,.2,1);
+  border-top:1px solid rgba(0,245,255,.1);
+}
+.mobile-drawer.open{transform:translateX(0)}
+.drawer-link{
+  font-family:var(--ff-head);font-size:1.2rem;font-weight:600;letter-spacing:.15em;
+  text-transform:uppercase;color:var(--t2);cursor:pointer;padding:14px 28px;
+  border:1px solid transparent;border-radius:var(--r);transition:var(--transition);
+  width:260px;text-align:center;
+}
+.drawer-link:hover,.drawer-link.active{color:var(--neon);border-color:rgba(0,245,255,.25);background:rgba(0,245,255,.05);
+  text-shadow:0 0 20px var(--neon);}
+
+/* ═══════════════════════════════════════
+   PAGE SYSTEM — all pages in one file
+═══════════════════════════════════════ */
+.page{
+  display:none;min-height:100vh;padding-top:60px;
+  position:relative;z-index:1;
+  animation:pgenter .4s cubic-bezier(.4,0,.2,1);
+}
+.page.active{display:block}
+@keyframes pgenter{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+
+/* ═══════════════════════════════════════
+   SHARED COMPONENTS
+═══════════════════════════════════════ */
+.container{max-width:1200px;margin:0 auto;padding:40px 24px 80px}
+.container-sm{max-width:640px;margin:0 auto;padding:40px 24px 80px}
+.container-md{max-width:880px;margin:0 auto;padding:40px 24px 80px}
+
+/* Section heading */
+.section-tag{
+  display:inline-flex;align-items:center;gap:8px;font-family:var(--ff-sub);
+  font-size:.68rem;letter-spacing:.2em;text-transform:uppercase;color:var(--neon);
+  margin-bottom:12px;
+}
+.section-tag::before,.section-tag::after{content:'';flex:1;min-width:20px;height:1px;background:linear-gradient(to right,var(--neon),transparent)}
+.section-tag::before{background:linear-gradient(to left,var(--neon),transparent)}
+.section-h{font-family:var(--ff-head);font-size:clamp(1.8rem,4vw,2.8rem);font-weight:700;letter-spacing:-.02em;line-height:1.1;margin-bottom:14px}
+.section-h .hl{background:linear-gradient(135deg,var(--neon),var(--blue));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.section-h .hlfire{background:linear-gradient(135deg,var(--fire),var(--ember));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.section-sub{font-family:var(--ff-sub);font-size:.92rem;color:var(--t2);max-width:560px;line-height:1.7}
+
+/* Cards */
+.card{
+  background:linear-gradient(135deg,var(--s1) 0%,var(--s2) 100%);
+  border:1px solid var(--b1);border-radius:var(--r);padding:22px;
+  transition:var(--transition);position:relative;overflow:hidden;
+}
+.card::before{
+  content:'';position:absolute;inset:0;border-radius:inherit;
+  background:linear-gradient(135deg,rgba(0,245,255,.03),transparent 60%);
+  opacity:0;transition:var(--transition);pointer-events:none;
+}
+.card:hover{border-color:var(--b2);transform:translateY(-3px);box-shadow:0 20px 40px rgba(0,0,0,.4)}
+.card:hover::before{opacity:1}
 .card+.card{margin-top:14px}
-.card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
-.card-title{font-size:.82rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--t2);display:flex;align-items:center;gap:8px}
-.card-title::before{content:'';width:3px;height:13px;background:linear-gradient(to bottom,var(--fire),var(--ember));border-radius:2px;flex-shrink:0}
+
+.card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.card-title{
+  font-family:var(--ff-head);font-size:.72rem;font-weight:600;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--neon);display:flex;align-items:center;gap:8px;
+}
+.card-title::before{content:'';width:3px;height:13px;background:linear-gradient(to bottom,var(--neon),var(--blue));border-radius:2px}
+
+/* 3D stat cards */
+.stat-card{
+  background:linear-gradient(135deg,var(--s2),var(--s3));
+  border:1px solid var(--b1);border-radius:var(--r);padding:20px 16px;
+  text-align:center;cursor:default;transition:var(--transition);
+  position:relative;overflow:hidden;
+}
+.stat-card::after{
+  content:'';position:absolute;top:-40%;left:-40%;width:80%;height:80%;
+  background:radial-gradient(circle,rgba(0,245,255,.05),transparent 70%);
+  transition:var(--transition);
+}
+.stat-card:hover{transform:translateY(-4px) rotateX(5deg);box-shadow:0 24px 48px rgba(0,0,0,.5),0 0 0 1px rgba(0,245,255,.15),0 8px 20px rgba(0,245,255,.1)}
+.stat-card:hover::after{top:-20%;left:-20%}
+.stat-val{font-family:var(--ff-head);font-size:2rem;font-weight:900;color:var(--neon);line-height:1;margin-bottom:6px}
+.stat-lbl{font-family:var(--ff-sub);font-size:.67rem;letter-spacing:.1em;text-transform:uppercase;color:var(--t3)}
+.stat-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:24px}
 
 /* Buttons */
-.btn{display:inline-flex;align-items:center;gap:7px;padding:10px 18px;border:none;border-radius:var(--rs);font-family:var(--ff);font-size:.8rem;font-weight:700;letter-spacing:.03em;cursor:pointer;transition:all .2s;white-space:nowrap;text-decoration:none}
-.btn-fire{background:linear-gradient(135deg,var(--fire),var(--fire2));color:#fff;box-shadow:0 4px 18px var(--fireglow)}
-.btn-fire:hover{filter:brightness(1.1);transform:translateY(-1px);box-shadow:0 8px 28px var(--fireglow)}
+.btn{
+  display:inline-flex;align-items:center;gap:8px;padding:11px 22px;
+  border:none;border-radius:var(--rs);
+  font-family:var(--ff-head);font-size:.72rem;font-weight:600;letter-spacing:.1em;
+  text-transform:uppercase;cursor:pointer;transition:var(--transition);
+  white-space:nowrap;position:relative;overflow:hidden;text-decoration:none;
+}
+.btn::after{content:'';position:absolute;inset:0;opacity:0;transition:opacity .2s;
+  background:linear-gradient(135deg,rgba(255,255,255,.1),transparent)}
+.btn:hover::after{opacity:1}
+.btn-neon{background:transparent;border:1px solid var(--neon);color:var(--neon);
+  box-shadow:0 0 16px rgba(0,245,255,.15),inset 0 0 16px rgba(0,245,255,.04)}
+.btn-neon:hover{background:rgba(0,245,255,.08);box-shadow:0 0 28px rgba(0,245,255,.35),inset 0 0 28px rgba(0,245,255,.06);transform:translateY(-2px)}
+.btn-fire{background:linear-gradient(135deg,var(--fire),var(--fire2));color:#fff;
+  box-shadow:0 4px 20px var(--fireglow)}
+.btn-fire:hover{filter:brightness(1.1);transform:translateY(-2px);box-shadow:0 8px 32px var(--fireglow)}
 .btn-ghost{background:transparent;border:1px solid var(--b2);color:var(--t2)}
 .btn-ghost:hover{border-color:var(--b3);color:var(--t1)}
-.btn-green{background:var(--gbg);border:1px solid var(--gbdr);color:var(--green)}
-.btn-green:hover{background:rgba(16,185,129,.18)}
+.btn-green{background:rgba(0,230,118,.1);border:1px solid var(--gbdr);color:var(--green)}
 .btn-red{background:var(--rbg);border:1px solid var(--rbdr);color:var(--red)}
-.btn-red:hover{background:rgba(244,63,94,.18)}
 .btn-amber{background:var(--abg);border:1px solid var(--abdr);color:var(--amber)}
-.btn-sm{padding:6px 12px;font-size:.73rem}
-.btn-xs{padding:4px 9px;font-size:.68rem}
+.btn-sm{padding:7px 14px;font-size:.65rem}
+.btn-xs{padding:4px 10px;font-size:.62rem}
 .btn-full{width:100%;justify-content:center}
-.btn:disabled{opacity:.4;cursor:not-allowed;transform:none!important}
 
 /* Inputs */
-.field{margin-bottom:14px}
-.field label,.lbl{display:block;font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;color:var(--t2);margin-bottom:6px;font-weight:600}
-input,select,textarea{width:100%;background:rgba(0,0,0,.3);border:1px solid var(--b2);border-radius:var(--rs);padding:11px 14px;color:var(--t1);font-family:var(--ff);font-size:.88rem;outline:none;transition:border .2s,box-shadow .2s}
-input:focus,select:focus,textarea:focus{border-color:var(--fire);box-shadow:0 0 0 3px var(--fireglow)}
-input::placeholder,textarea::placeholder{color:var(--t3)}
-select{cursor:pointer}
-select option{background:var(--s2)}
-textarea{resize:vertical;min-height:90px;font-family:var(--mono);font-size:.78rem;line-height:1.7}
+.field{margin-bottom:16px}
+.field label,.lbl{display:block;font-family:var(--ff-sub);font-size:.67rem;letter-spacing:.12em;text-transform:uppercase;color:var(--t2);margin-bottom:7px;font-weight:500}
+input,select,textarea{
+  width:100%;background:rgba(0,0,0,.4);border:1px solid var(--b2);border-radius:var(--rs);
+  padding:12px 15px;color:var(--t1);font-family:var(--ff-sub);font-size:.88rem;outline:none;
+  transition:var(--transition);
+}
+input:focus,select:focus,textarea:focus{
+  border-color:var(--neon);
+  box-shadow:0 0 0 3px rgba(0,245,255,.12),0 0 20px rgba(0,245,255,.06);
+}
+input::placeholder,textarea::placeholder{color:var(--t3);font-family:var(--ff-sub)}
+select{cursor:pointer}select option{background:var(--s2)}
+textarea{resize:vertical;min-height:90px;font-family:var(--ff-mono);font-size:.78rem;line-height:1.75}
 
-/* Badges */
-.badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:50px;font-size:.67rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
-.b-online{background:var(--gbg);border:1px solid var(--gbdr);color:var(--green)}
-.b-offline{background:rgba(148,163,184,.08);border:1px solid rgba(148,163,184,.15);color:#94a3b8}
-.b-pending{background:var(--abg);border:1px solid var(--abdr);color:var(--amber)}
-.b-banned{background:var(--rbg);border:1px solid var(--rbdr);color:var(--red)}
+/* Badge */
+.badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:50px;font-size:.64rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;font-family:var(--ff-sub)}
+.b-on{background:var(--gbg);border:1px solid var(--gbdr);color:var(--green)}
+.b-off{background:rgba(150,150,150,.08);border:1px solid rgba(150,150,150,.15);color:#708090}
+.b-ban{background:var(--rbg);border:1px solid var(--rbdr);color:var(--red)}
+.b-pend{background:var(--abg);border:1px solid var(--abdr);color:var(--amber)}
 .b-admin{background:rgba(255,77,28,.1);border:1px solid rgba(255,77,28,.2);color:var(--fire)}
-.b-dot{width:5px;height:5px;border-radius:50%;background:currentColor;animation:bpulse 2s ease-in-out infinite}
-@keyframes bpulse{0%,100%{opacity:1}50%{opacity:.3}}
+.b-dot{width:5px;height:5px;border-radius:50%;background:currentColor;animation:statusblink 2s ease-in-out infinite}
 
-/* Flash alerts */
-.flash{padding:10px 14px;border-radius:var(--rs);font-size:.8rem;display:none;margin-bottom:12px;line-height:1.5;align-items:center;gap:8px}
-.flash.show{display:flex;animation:fadein .2s ease}
-.flash-ok{background:var(--gbg);border:1px solid var(--gbdr);color:var(--green)}
-.flash-err{background:var(--rbg);border:1px solid var(--rbdr);color:var(--red)}
-.flash-info{background:var(--bbg);border:1px solid rgba(59,130,246,.25);color:#93c5fd}
-.flash-warn{background:var(--abg);border:1px solid var(--abdr);color:var(--amber)}
-@keyframes fadein{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+/* Flash */
+.flash{padding:11px 15px;border-radius:var(--rs);font-size:.82rem;display:none;margin-bottom:14px;align-items:center;gap:8px;font-family:var(--ff-sub)}
+.flash.show{display:flex;animation:pgenter .2s ease}
+.f-ok{background:var(--gbg);border:1px solid var(--gbdr);color:var(--green)}
+.f-err{background:var(--rbg);border:1px solid var(--rbdr);color:var(--red)}
+.f-info{background:rgba(0,245,255,.06);border:1px solid rgba(0,245,255,.2);color:var(--neon)}
+.f-warn{background:var(--abg);border:1px solid var(--abdr);color:var(--amber)}
 
-/* Tables */
+/* Table */
 .tbl-wrap{overflow-x:auto;border-radius:var(--rs);border:1px solid var(--b1)}
-table{width:100%;border-collapse:collapse;font-size:.78rem}
-thead{background:rgba(0,0,0,.2)}
-th{padding:9px 13px;text-align:left;color:var(--t2);font-weight:600;font-size:.67rem;letter-spacing:.08em;text-transform:uppercase;border-bottom:1px solid var(--b1);white-space:nowrap}
-td{padding:10px 13px;border-bottom:1px solid rgba(255,255,255,.04);vertical-align:middle}
+table{width:100%;border-collapse:collapse;font-size:.78rem;font-family:var(--ff-sub)}
+thead{background:rgba(0,0,0,.3)}
+th{padding:10px 14px;text-align:left;color:var(--t2);font-weight:600;font-size:.64rem;letter-spacing:.1em;text-transform:uppercase;border-bottom:1px solid var(--b1);white-space:nowrap}
+td{padding:11px 14px;border-bottom:1px solid rgba(255,255,255,.03);vertical-align:middle}
 tr:last-child td{border-bottom:none}
-tbody tr{transition:background .1s}
-tbody tr:hover td{background:rgba(255,255,255,.02)}
-.mono{font-family:var(--mono);font-size:.74rem;letter-spacing:.04em}
+tbody tr{transition:background .12s}
+tbody tr:hover td{background:rgba(0,245,255,.02)}
+.mono{font-family:var(--ff-mono);font-size:.74rem;letter-spacing:.04em}
+
+/* Code editor */
+.editor-wrap{border:1px solid var(--b1);border-radius:var(--r);overflow:hidden;display:none}
+.editor-wrap.open{display:block;animation:pgenter .2s ease}
+.editor-bar{background:var(--s2);padding:9px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--b1)}
+.editor-fname{font-family:var(--ff-mono);font-size:.72rem;color:var(--neon)}
+.editor-acts{margin-left:auto;display:flex;gap:7px}
+.editor-area{display:block;width:100%;background:#050a14;border:none;padding:16px;font-family:var(--ff-mono);font-size:.76rem;color:#a8d8f0;min-height:260px;resize:vertical;line-height:1.8;outline:none;tab-size:2}
 
 /* Grid */
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
 
 /* Spinner */
-.spin{display:inline-block;width:13px;height:13px;border:2px solid rgba(255,255,255,.15);border-top-color:rgba(255,255,255,.7);border-radius:50%;animation:rot .7s linear infinite;vertical-align:middle;margin-right:6px}
-@keyframes rot{to{transform:rotate(360deg)}}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid rgba(0,245,255,.15);border-top-color:rgba(0,245,255,.7);border-radius:50%;animation:spinrot .7s linear infinite;vertical-align:middle;margin-right:6px}
+@keyframes spinrot{to{transform:rotate(360deg)}}
 
-/* Code editor */
-.editor-wrap{border:1px solid var(--b1);border-radius:var(--r);overflow:hidden;display:none}
-.editor-wrap.open{display:block;animation:fadein .2s ease}
-.editor-bar{background:var(--s2);padding:9px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--b1)}
-.editor-fname{font-family:var(--mono);font-size:.74rem;color:var(--t2)}
-.editor-acts{margin-left:auto;display:flex;gap:7px}
-.editor-area{display:block;width:100%;background:var(--s1);border:none;padding:16px;font-family:var(--mono);font-size:.76rem;color:var(--t1);min-height:260px;resize:vertical;line-height:1.75;outline:none}
-
-/* Live pulse */
-.live-pill{display:inline-flex;align-items:center;gap:6px;background:var(--gbg);border:1px solid var(--gbdr);border-radius:50px;padding:4px 12px;font-size:.67rem;letter-spacing:.08em;text-transform:uppercase;color:var(--green)}
-.live-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:bpulse 2s ease-in-out infinite;box-shadow:0 0 6px var(--green)}
+/* Live feed */
+.live-feed{max-height:260px;overflow-y:auto;border:1px solid var(--b1);border-radius:var(--rs)}
+.feed-row{display:flex;align-items:flex-start;gap:10px;padding:9px 13px;border-bottom:1px solid var(--b1);font-size:.76rem;font-family:var(--ff-sub)}
+.feed-row:last-child{border-bottom:none}
+.feed-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:5px}
+.fd-g{background:var(--green)}.fd-r{background:var(--red)}.fd-b{background:var(--neon)}.fd-a{background:var(--amber)}
+.feed-body{flex:1;line-height:1.4}
+.feed-time{font-size:.63rem;color:var(--t3);font-family:var(--ff-mono);margin-top:2px}
 
 /* Scrollbar */
 ::-webkit-scrollbar{width:4px;height:4px}
-::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(0,245,255,.15);border-radius:4px}
+::-webkit-scrollbar-thumb:hover{background:rgba(0,245,255,.3)}
 
-/*═══════════════════════════════════════════
-  VIEWS — each view fills viewport
-═══════════════════════════════════════════*/
-.view{display:none;min-height:100vh;position:relative;z-index:1}
-.view.active{display:block;animation:fadein .3s ease}
+/* ═══════════════════════════════════════
+   PAGE 1: HOME (Pair + Status)
+═══════════════════════════════════════ */
+.hero{
+  padding:100px 24px 60px;text-align:center;max-width:760px;margin:0 auto;
+  position:relative;
+}
+.hero-eyebrow{
+  display:inline-flex;align-items:center;gap:8px;font-family:var(--ff-sub);
+  font-size:.68rem;letter-spacing:.25em;text-transform:uppercase;color:var(--neon);
+  margin-bottom:20px;
+  border:1px solid rgba(0,245,255,.2);border-radius:50px;padding:5px 16px;
+  background:rgba(0,245,255,.04);
+}
+.hero-title{
+  font-family:var(--ff-head);font-size:clamp(2.4rem,7vw,4.5rem);
+  font-weight:900;letter-spacing:-.03em;line-height:1.05;margin-bottom:18px;
+}
+.hero-title .line2{
+  background:linear-gradient(135deg,var(--neon) 0%,var(--blue) 50%,var(--purple) 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  display:block;
+}
+.hero-sub{font-family:var(--ff-sub);font-size:.95rem;color:var(--t2);line-height:1.7;max-width:480px;margin:0 auto 32px}
+.hero-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
 
-/*── VIEW: LANDING / PAIR ──────────────────────────────────*/
-#v-land{display:flex;align-items:flex-start;justify-content:center;padding:48px 16px 80px}
-.land-wrap{width:100%;max-width:520px}
+/* 3D hexagon stats */
+.hex-stats{display:flex;justify-content:center;gap:20px;margin:48px 0;flex-wrap:wrap}
+.hex-stat{
+  width:110px;height:126px;position:relative;cursor:default;
+  display:flex;align-items:center;justify-content:center;flex-direction:column;
+  transition:var(--transition);
+}
+.hex-stat:hover{transform:translateY(-6px) scale(1.05)}
+.hex-bg{
+  position:absolute;inset:0;
+  background:linear-gradient(135deg,var(--s2),var(--s3));
+  clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);
+  border:0 solid transparent;
+  filter:drop-shadow(0 8px 24px rgba(0,0,0,.4));
+  transition:var(--transition);
+}
+.hex-stat:hover .hex-bg{filter:drop-shadow(0 12px 32px rgba(0,245,255,.15))}
+.hex-content{position:relative;z-index:1;text-align:center}
+.hex-val{font-family:var(--ff-head);font-size:1.4rem;font-weight:800;color:var(--neon);line-height:1}
+.hex-lbl{font-family:var(--ff-sub);font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--t3);margin-top:4px}
 
-.brand-row{display:flex;align-items:center;gap:14px;margin-bottom:40px}
-.brand-flame{width:48px;height:48px;border-radius:14px;background:linear-gradient(135deg,var(--fire),var(--ember));display:flex;align-items:center;justify-content:center;font-size:1.5rem;box-shadow:0 10px 32px var(--fireglow);flex-shrink:0}
-.brand-text h1{font-size:1.2rem;font-weight:800;letter-spacing:-.01em}
-.brand-text p{font-size:.78rem;color:var(--t2)}
+/* Pair card */
+.pair-card{
+  background:linear-gradient(135deg,rgba(6,12,22,.95),rgba(10,22,40,.95));
+  border:1px solid rgba(0,245,255,.15);border-radius:var(--rl);padding:36px;
+  max-width:520px;margin:0 auto;
+  box-shadow:0 40px 80px rgba(0,0,0,.5),0 0 0 1px rgba(255,255,255,.04);
+  position:relative;overflow:hidden;
+}
+.pair-card::before{
+  content:'';position:absolute;top:-1px;left:20%;right:20%;height:1px;
+  background:linear-gradient(to right,transparent,var(--neon),transparent);
+}
+.pair-card-title{
+  font-family:var(--ff-head);font-size:.8rem;font-weight:600;letter-spacing:.15em;
+  text-transform:uppercase;color:var(--neon);text-align:center;margin-bottom:24px;
+}
 
-/* View tabs on landing */
-.view-tabs{display:flex;gap:3px;background:rgba(0,0,0,.3);border-radius:var(--r);padding:3px;margin-bottom:24px}
-.view-tab{flex:1;padding:9px;text-align:center;border-radius:9px;cursor:pointer;font-size:.8rem;font-weight:600;color:var(--t2);transition:all .2s;border:none;background:transparent;font-family:var(--ff)}
-.view-tab.on{background:var(--s3);color:var(--t1);box-shadow:0 2px 8px rgba(0,0,0,.3)}
-.view-tab:hover:not(.on){color:var(--t1)}
-
-.tab-pane{display:none}.tab-pane.on{display:block;animation:fadein .2s ease}
-
-/* Pairing code display */
-.code-reveal{background:linear-gradient(135deg,rgba(255,77,28,.06),rgba(255,122,69,.03));border:1px solid rgba(255,77,28,.2);border-radius:var(--r);padding:24px;text-align:center;margin-top:16px;display:none}
-.code-reveal.show{display:block;animation:fadein .3s ease}
-.code-lbl{font-size:.67rem;letter-spacing:.18em;text-transform:uppercase;color:var(--fire);margin-bottom:12px;font-weight:700}
-.code-val{font-family:var(--mono);font-size:2.6rem;font-weight:900;letter-spacing:.22em;color:var(--t1);line-height:1}
-.code-hint{font-size:.78rem;color:var(--t2);margin-top:12px;line-height:1.5}
+/* Code display */
+.code-box{
+  background:linear-gradient(135deg,rgba(0,10,20,.9),rgba(0,5,15,.9));
+  border:1px solid rgba(0,245,255,.2);border-radius:var(--r);padding:28px;
+  text-align:center;margin-top:20px;display:none;
+  box-shadow:0 0 40px rgba(0,245,255,.06),inset 0 0 40px rgba(0,0,0,.5);
+}
+.code-box.show{display:block;animation:pgenter .35s ease}
+.code-box-label{font-family:var(--ff-sub);font-size:.63rem;letter-spacing:.2em;text-transform:uppercase;color:var(--neon);margin-bottom:14px;opacity:.7}
+.code-digits{font-family:var(--ff-head);font-size:2.8rem;font-weight:900;letter-spacing:.3em;color:var(--t1);
+  text-shadow:0 0 40px rgba(0,245,255,.3);line-height:1}
+.code-hint{font-family:var(--ff-sub);font-size:.78rem;color:var(--t2);margin-top:14px;line-height:1.6}
 .code-hint strong{color:var(--t1)}
+.deploy-reveal{
+  margin-top:14px;background:rgba(255,215,64,.04);border:1px solid rgba(255,215,64,.2);
+  border-radius:var(--rs);padding:16px;text-align:center;display:none;
+}
+.deploy-reveal.show{display:block}
+.deploy-label{font-size:.62rem;letter-spacing:.15em;text-transform:uppercase;color:var(--amber);margin-bottom:8px;font-family:var(--ff-sub)}
+.deploy-val{font-family:var(--ff-head);font-size:1.5rem;font-weight:800;letter-spacing:.12em;color:var(--amber);word-break:break-all}
+.deploy-sub{font-size:.72rem;color:var(--t3);margin-top:6px;font-family:var(--ff-sub)}
 
-.deploy-pill{margin-top:14px;background:rgba(0,0,0,.25);border:1px solid var(--b2);border-radius:var(--rs);padding:14px 18px;text-align:center;display:none}
-.deploy-pill.show{display:block}
-.deploy-lbl{font-size:.67rem;letter-spacing:.14em;text-transform:uppercase;color:var(--t3);margin-bottom:6px;font-weight:700}
-.deploy-id{font-family:var(--mono);font-size:1.4rem;font-weight:800;letter-spacing:.1em;color:var(--amber)}
-.deploy-sub{font-size:.73rem;color:var(--t3);margin-top:5px}
+/* Tab pills */
+.tab-pills{display:flex;gap:3px;background:rgba(0,0,0,.3);border:1px solid var(--b1);border-radius:50px;padding:3px;margin-bottom:24px}
+.tab-pill{flex:1;padding:9px 14px;text-align:center;border-radius:50px;cursor:pointer;
+  font-family:var(--ff-sub);font-size:.78rem;font-weight:600;color:var(--t3);
+  transition:var(--transition);border:none;background:transparent;letter-spacing:.04em}
+.tab-pill.on{background:rgba(0,245,255,.12);color:var(--neon);box-shadow:0 0 20px rgba(0,245,255,.1)}
+.tab-pill:hover:not(.on){color:var(--t1)}
+.tab-pane{display:none}.tab-pane.on{display:block;animation:pgenter .25s ease}
 
-/* Stats mini bar */
-.stats-bar{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--b1);border:1px solid var(--b1);border-radius:var(--r);overflow:hidden;margin-bottom:28px}
-.stat-cell{background:rgba(255,255,255,.02);padding:14px 10px;text-align:center}
-.stat-n{font-family:var(--mono);font-size:1.5rem;font-weight:800;color:var(--fire)}
-.stat-l{font-size:.67rem;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);margin-top:2px}
+/* Feat grid */
+.feat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-top:24px}
+.feat-card{
+  background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:18px;
+  transition:var(--transition);cursor:default;
+}
+.feat-card:hover{border-color:rgba(0,245,255,.2);transform:translateY(-3px);background:var(--s2)}
+.feat-icon{font-size:1.5rem;margin-bottom:10px}
+.feat-name{font-family:var(--ff-head);font-size:.72rem;font-weight:600;color:var(--neon);letter-spacing:.08em;margin-bottom:4px}
+.feat-desc{font-family:var(--ff-sub);font-size:.75rem;color:var(--t2)}
 
-/* Steps */
-.steps{display:flex;flex-direction:column;gap:12px}
-.step{display:flex;gap:12px;align-items:flex-start}
-.step-n{min-width:26px;height:26px;border-radius:50%;background:rgba(255,77,28,.12);border:1px solid rgba(255,77,28,.3);display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;color:var(--fire);flex-shrink:0}
-.step-t{font-size:.83rem;color:var(--t2);line-height:1.55;padding-top:3px}
-.step-t strong{color:var(--t1)}
+/* ═══════════════════════════════════════
+   PAGE 2: USER PORTAL
+═══════════════════════════════════════ */
+.portal-layout{display:grid;grid-template-columns:220px 1fr;min-height:calc(100vh - 60px)}
+.portal-sidebar{background:var(--s1);border-right:1px solid var(--b1);padding:24px 0;position:sticky;top:60px;height:calc(100vh - 60px);overflow-y:auto}
+.portal-main{padding:32px 28px}
 
-/*── VIEW: USER PORTAL ─────────────────────────────────────*/
-#v-user{padding:0}
-.user-shell{display:grid;grid-template-columns:220px 1fr;grid-template-rows:52px 1fr;min-height:100vh}
-.user-topbar{grid-column:1/-1;background:var(--s1);border-bottom:1px solid var(--b1);display:flex;align-items:center;padding:0 20px;gap:12px}
-.user-sidebar{background:var(--s1);border-right:1px solid var(--b1);padding:12px 0}
-.user-main{overflow-y:auto;padding:24px 28px;background:var(--bg)}
+.pnav-section{padding:4px 18px;font-family:var(--ff-sub);font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--t3);font-weight:600;margin-top:12px}
+.pnav-section:first-child{margin-top:0}
+.pnav-btn{
+  display:flex;align-items:center;gap:10px;padding:10px 18px;width:100%;
+  border:none;border-left:2px solid transparent;background:transparent;
+  font-family:var(--ff-body);font-size:.84rem;color:var(--t2);
+  cursor:pointer;transition:var(--transition);text-align:left;letter-spacing:.04em;
+}
+.pnav-btn:hover{background:rgba(0,245,255,.04);color:var(--t1)}
+.pnav-btn.on{background:rgba(0,245,255,.06);color:var(--neon);border-left-color:var(--neon);font-weight:600}
+.pnav-btn .ic{width:18px;text-align:center;font-size:.9rem;flex-shrink:0}
 
-.unav-btn{display:flex;align-items:center;gap:10px;padding:9px 16px;cursor:pointer;border-left:2px solid transparent;color:var(--t2);font-size:.82rem;transition:all .15s;background:transparent;border:none;border-left:2px solid transparent;width:100%;text-align:left;font-family:var(--ff)}
-.unav-btn:hover{background:rgba(255,255,255,.03);color:var(--t1)}
-.unav-btn.on{background:rgba(16,185,129,.08);color:var(--green);border-left-color:var(--green);font-weight:600}
-.unav-btn .ic{width:18px;text-align:center;font-size:.9rem;flex-shrink:0}
-.unav-lbl{font-size:.63rem;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);padding:8px 16px 3px;font-weight:600}
-
-.upg{display:none}.upg.on{display:block;animation:fadein .25s ease}
+.upg{display:none}.upg.on{display:block;animation:pgenter .25s ease}
 
 /* Server cards */
-.server-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px}
-.srv-card{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:18px;transition:border .2s,transform .2s;cursor:pointer}
-.srv-card:hover{border-color:var(--b2);transform:translateY(-2px)}
-.srv-card-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
-.srv-icon{width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,var(--s3),var(--s4));display:flex;align-items:center;justify-content:center;font-size:1.1rem}
-.srv-name{font-weight:700;font-size:.92rem;margin-bottom:3px}
-.srv-region{font-size:.73rem;color:var(--t2)}
-.srv-url{font-family:var(--mono);font-size:.7rem;color:var(--fire);margin-top:8px;word-break:break-all}
-.srv-footer{display:flex;align-items:center;justify-content:space-between;margin-top:12px;padding-top:12px;border-top:1px solid var(--b1);font-size:.73rem;color:var(--t2)}
+.srv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+.srv-card{
+  background:linear-gradient(135deg,var(--s1),var(--s2));
+  border:1px solid var(--b1);border-radius:var(--r);padding:20px;
+  transition:var(--transition);cursor:pointer;position:relative;overflow:hidden;
+}
+.srv-card::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(0,245,255,.03),transparent);opacity:0;transition:var(--transition)}
+.srv-card:hover{border-color:rgba(0,245,255,.2);transform:translateY(-4px);box-shadow:0 20px 40px rgba(0,0,0,.4)}
+.srv-card:hover::after{opacity:1}
+.srv-card-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.srv-icon-wrap{width:44px;height:44px;border-radius:12px;background:var(--s3);border:1px solid var(--b2);display:flex;align-items:center;justify-content:center;font-size:1.1rem}
+.srv-name{font-family:var(--ff-head);font-size:.85rem;font-weight:600;color:var(--t1);margin-bottom:4px;letter-spacing:.04em}
+.srv-region{font-family:var(--ff-sub);font-size:.73rem;color:var(--t2)}
+.srv-url{font-family:var(--ff-mono);font-size:.68rem;color:var(--neon);margin-top:10px;word-break:break-all;opacity:.8}
+.srv-notes{font-family:var(--ff-sub);font-size:.74rem;color:var(--t2);margin-top:8px;line-height:1.5}
+.srv-footer{display:flex;align-items:center;justify-content:space-between;margin-top:14px;padding-top:12px;border-top:1px solid var(--b1);font-family:var(--ff-sub);font-size:.72rem;color:var(--t2)}
 
-/*── VIEW: ADMIN PANEL ─────────────────────────────────────*/
-#v-admin{padding:0}
-.admin-shell{display:grid;grid-template-columns:230px 1fr;grid-template-rows:52px 1fr;min-height:100vh}
-.admin-topbar{grid-column:1/-1;background:var(--s1);border-bottom:1px solid var(--b1);display:flex;align-items:center;padding:0 20px;gap:12px}
-.admin-sidebar{background:var(--s1);border-right:1px solid var(--b1);padding:12px 0;display:flex;flex-direction:column;overflow-y:auto}
-.admin-main{overflow-y:auto;padding:24px 28px;background:var(--bg)}
-
-.anav-sec{padding:6px 16px 3px;font-size:.62rem;letter-spacing:.13em;text-transform:uppercase;color:var(--t3);font-weight:700;margin-top:8px}
-.anav-sec:first-child{margin-top:0}
-.anav-btn{display:flex;align-items:center;gap:10px;padding:9px 16px;cursor:pointer;border-left:2px solid transparent;color:var(--t2);font-size:.82rem;transition:all .15s;background:transparent;border:none;border-left:2px solid transparent;width:100%;text-align:left;font-family:var(--ff)}
-.anav-btn:hover{background:rgba(255,255,255,.03);color:var(--t1)}
-.anav-btn.on{background:rgba(255,77,28,.08);color:var(--fire);border-left-color:var(--fire);font-weight:600}
-.anav-btn .ic{width:18px;text-align:center;font-size:.9rem;flex-shrink:0}
-.anav-badge{margin-left:auto;background:var(--fire);color:#fff;border-radius:50px;padding:1px 7px;font-size:.62rem;font-weight:800}
-.anav-badge.g{background:var(--green)}.anav-badge.a{background:var(--amber);color:#000}
-.admin-sb-footer{margin-top:auto;padding:14px 16px;border-top:1px solid var(--b1);font-size:.75rem;color:var(--t2)}
-
-.apg{display:none}.apg.on{display:block;animation:fadein .25s ease}
-.pg-h{margin-bottom:22px}
-.pg-h h2{font-size:1.4rem;font-weight:800;margin-bottom:2px}
-.pg-h p{font-size:.8rem;color:var(--t2)}
-
-/* Stat cards row */
-.stat-row{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:22px}
-.scard{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:16px;text-align:center;transition:border .2s,transform .15s}
-.scard:hover{border-color:var(--b2);transform:translateY(-2px)}
-.scard-ico{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.95rem;margin:0 auto 8px}
-.scard-ico.fire{background:rgba(255,77,28,.12)}
-.scard-ico.green{background:var(--gbg)}
-.scard-ico.blue{background:var(--bbg)}
-.scard-ico.amber{background:var(--abg)}
-.scard-ico.purple{background:rgba(168,85,247,.1)}
-.scard-v{font-size:1.7rem;font-weight:900;color:var(--fire);font-family:var(--mono)}
-.scard-l{font-size:.67rem;letter-spacing:.07em;text-transform:uppercase;color:var(--t3);margin-top:3px}
-
-/* Live feed */
-.live-feed{max-height:280px;overflow-y:auto;border:1px solid var(--b1);border-radius:var(--rs)}
-.feed-row{display:flex;align-items:flex-start;gap:10px;padding:9px 13px;border-bottom:1px solid var(--b1);font-size:.77rem}
-.feed-row:last-child{border-bottom:none}
-.feed-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:5px}
-.feed-dot.g{background:var(--green)}.feed-dot.r{background:var(--red)}.feed-dot.b{background:var(--blue)}.feed-dot.a{background:var(--amber)}
-.feed-body{flex:1;line-height:1.45}
-.feed-time{font-size:.64rem;color:var(--t3);font-family:var(--mono);margin-top:2px}
+/* Status rows */
+.status-row{display:flex;align-items:center;gap:12px;padding:12px 14px;background:rgba(0,0,0,.25);border-radius:var(--rs);margin-bottom:8px;font-family:var(--ff-sub);font-size:.84rem}
+.status-row .ic2{width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:.9rem;flex-shrink:0}
+.status-row .lbody{flex:1;color:var(--t2)}
+.status-row .rval{font-family:var(--ff-mono);font-size:.78rem;color:var(--t1)}
 
 /* Ann card */
-.ann-card{background:linear-gradient(135deg,rgba(255,77,28,.05),transparent);border:1px solid rgba(255,77,28,.12);border-radius:var(--r);padding:14px;margin-bottom:10px}
-.ann-type-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
-.ann-title{font-weight:700;font-size:.88rem}
-.ann-body{font-size:.82rem;color:var(--t2);line-height:1.55}
-.ann-footer{display:flex;align-items:center;gap:8px;margin-top:10px}
+.ann-card{
+  background:linear-gradient(135deg,rgba(255,77,28,.04),rgba(255,122,69,.02));
+  border:1px solid rgba(255,77,28,.1);border-radius:var(--r);padding:16px;margin-bottom:12px;
+}
+.ann-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:8px}
+.ann-title-text{font-family:var(--ff-head);font-size:.82rem;font-weight:600;color:var(--t1);letter-spacing:.04em}
+.ann-body-text{font-family:var(--ff-sub);font-size:.82rem;color:var(--t2);line-height:1.6}
+.ann-footer-row{display:flex;align-items:center;gap:8px;margin-top:10px}
+.ann-time{font-family:var(--ff-mono);font-size:.63rem;color:var(--t3)}
 
-/*═══════════════════════════════════════════
-  TOPBAR components (shared)
-═══════════════════════════════════════════*/
-.tb-logo{font-weight:900;font-size:.95rem;background:linear-gradient(135deg,var(--fire),var(--ember));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.tb-sep{width:1px;height:18px;background:var(--b2)}
-.tb-pg{font-size:.8rem;color:var(--t2);flex:1}
-.tb-pill{display:flex;align-items:center;gap:6px;font-size:.7rem;background:var(--gbg);border:1px solid var(--gbdr);border-radius:50px;padding:4px 11px;color:var(--green)}
-.tb-user{display:flex;align-items:center;gap:8px;background:var(--s2);border:1px solid var(--b1);border-radius:50px;padding:4px 12px 4px 6px}
-.tb-avatar{width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,var(--fire),var(--ember));display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:800;flex-shrink:0}
-.tb-uname{font-size:.77rem;font-weight:600}
-.tb-role{font-size:.64rem;color:var(--fire);font-weight:700;text-transform:uppercase;letter-spacing:.04em}
-.btn-logout{background:none;border:none;color:var(--t3);cursor:pointer;padding:6px 8px;border-radius:6px;transition:all .2s;font-size:.8rem}
-.btn-logout:hover{color:var(--red);background:var(--rbg)}
+/* ═══════════════════════════════════════
+   PAGE 3: ADMIN PANEL
+═══════════════════════════════════════ */
+.admin-layout{display:grid;grid-template-columns:230px 1fr;min-height:calc(100vh - 60px)}
+.admin-sidebar{background:var(--s1);border-right:1px solid var(--b1);padding:16px 0;position:sticky;top:60px;height:calc(100vh - 60px);overflow-y:auto;display:flex;flex-direction:column}
+.admin-main{padding:32px 28px;background:var(--bg)}
 
-/*═══════════════════════════════════════════
-  MEDIA QUERIES
-═══════════════════════════════════════════*/
+.anav-sec{padding:6px 18px 3px;font-family:var(--ff-sub);font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--t3);font-weight:600;margin-top:10px}
+.anav-sec:first-child{margin-top:0}
+.anav-btn{
+  display:flex;align-items:center;gap:10px;padding:10px 18px;width:100%;
+  border:none;border-left:2px solid transparent;background:transparent;
+  font-family:var(--ff-body);font-size:.84rem;color:var(--t2);
+  cursor:pointer;transition:var(--transition);text-align:left;letter-spacing:.04em;
+}
+.anav-btn:hover{background:rgba(255,77,28,.04);color:var(--t1)}
+.anav-btn.on{background:rgba(255,77,28,.07);color:var(--fire);border-left-color:var(--fire);font-weight:600}
+.anav-btn .ic{width:18px;text-align:center;font-size:.9rem;flex-shrink:0}
+.anav-badge{margin-left:auto;border-radius:50px;padding:1px 8px;font-size:.62rem;font-weight:700;font-family:var(--ff-mono)}
+.ab-fire{background:var(--fire);color:#fff}
+.ab-green{background:var(--green);color:#000}
+.ab-amber{background:var(--amber);color:#000}
+.admin-sb-footer{margin-top:auto;padding:14px 18px;border-top:1px solid var(--b1)}
+.sb-live{display:flex;align-items:center;gap:8px;font-family:var(--ff-sub);font-size:.75rem;color:var(--t2)}
+
+.apg{display:none}.apg.on{display:block;animation:pgenter .25s ease}
+.pg-head{margin-bottom:24px}
+.pg-head h2{font-family:var(--ff-head);font-size:1.3rem;font-weight:700;letter-spacing:-.01em;margin-bottom:4px}
+.pg-head p{font-family:var(--ff-sub);font-size:.82rem;color:var(--t2)}
+
+/* Admin login overlay */
+#admin-gate{
+  position:fixed;inset:0;z-index:2000;
+  background:rgba(2,4,9,.97);backdrop-filter:blur(20px);
+  display:flex;align-items:center;justify-content:center;
+}
+.login-card{
+  width:400px;background:var(--s1);border:1px solid var(--b2);
+  border-radius:var(--rl);padding:44px 36px;
+  box-shadow:0 40px 80px rgba(0,0,0,.6),0 0 0 1px rgba(0,245,255,.06);
+  position:relative;overflow:hidden;
+}
+.login-card::before{content:'';position:absolute;top:-1px;left:30%;right:30%;height:1px;background:linear-gradient(to right,transparent,var(--neon),transparent)}
+.login-logo-row{display:flex;align-items:center;gap:12px;margin-bottom:28px}
+.login-flame{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,var(--fire),var(--ember));display:flex;align-items:center;justify-content:center;font-size:1.3rem;box-shadow:0 8px 24px var(--fireglow);animation:flamepulse 3s ease-in-out infinite}
+.login-brand-text{font-family:var(--ff-head);font-size:1rem;font-weight:700;letter-spacing:.08em}
+.login-brand-sub{font-family:var(--ff-sub);font-size:.68rem;color:var(--t2);margin-top:2px}
+
+/* Drop zone */
+.drop-zone{
+  border:2px dashed var(--b2);border-radius:var(--r);padding:26px;
+  text-align:center;cursor:pointer;transition:var(--transition);
+}
+.drop-zone:hover,.drop-zone.over{border-color:var(--neon);background:rgba(0,245,255,.03)}
+.drop-icon{font-size:2rem;margin-bottom:8px}
+.drop-label{font-family:var(--ff-sub);font-size:.8rem;color:var(--t2)}
+.drop-label strong{color:var(--neon)}
+
+/* ═══════════════════════════════════════
+   RESPONSIVE
+═══════════════════════════════════════ */
 @media(max-width:900px){
-  .user-shell,.admin-shell{grid-template-columns:1fr;grid-template-rows:52px auto 1fr}
-  .user-sidebar,.admin-sidebar{display:none}
-  .stat-row{grid-template-columns:repeat(2,1fr)}
-  .g2,.g3{grid-template-columns:1fr}
+  .nav-links{display:none}
+  .burger{display:flex}
+  .portal-layout,.admin-layout{grid-template-columns:1fr}
+  .portal-sidebar,.admin-sidebar{display:none}
+  .stat-grid,.g2,.g3,.g4{grid-template-columns:1fr 1fr}
+  .srv-grid{grid-template-columns:1fr}
 }
 @media(max-width:560px){
-  .stats-bar{grid-template-columns:1fr 1fr}
-  .server-grid{grid-template-columns:1fr}
+  .stat-grid,.g2,.g3{grid-template-columns:1fr}
+  .hex-stats{gap:12px}
+  .hex-stat{width:90px;height:104px}
+  .hex-val{font-size:1.1rem}
+  .hero-title{font-size:2.2rem}
 }
 </style>
 </head>
 <body>
-<div class="orb orb-1"></div>
-<div class="orb orb-2"></div>
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+<div class="orb orb3"></div>
+<div class="scanlines"></div>
 
-<!-- ═══════════════════════════════════════════════════════
-     VIEW 1: LANDING — Pair / Check / Guide
-════════════════════════════════════════════════════════ -->
-<div class="view active z1" id="v-land">
-<div id="v-land" style="display:flex;align-items:flex-start;justify-content:center;padding:48px 16px 80px;min-height:100vh">
-<div style="width:100%;max-width:520px">
+<!-- ═══════════════════════════════════
+     NAVBAR (fixed, all pages)
+════════════════════════════════════ -->
+<nav class="navbar" id="navbar">
+  <div class="nav-logo" onclick="showPage('home')">
+    <div class="nav-flame">🔥</div>
+    <div class="nav-brand">REDXBOT302<span>v6.0.0 — Powered by Baileys</span></div>
+  </div>
 
-  <!-- Brand -->
-  <div class="brand-row">
-    <div class="brand-flame">🔥</div>
-    <div class="brand-text">
-      <h1>REDXBOT302</h1>
-      <p>WhatsApp MD Bot — v6.0.0 &nbsp;|&nbsp; One URL. Everything.</p>
+  <div class="nav-links">
+    <button class="nav-link active" id="nl-home"   onclick="showPage('home')">Home</button>
+    <button class="nav-link"        id="nl-user"   onclick="showPage('user')">My Bot</button>
+    <button class="nav-link"        id="nl-admin"  onclick="showPage('admin')">Admin</button>
+  </div>
+
+  <div class="nav-right">
+    <div class="nav-status" id="nav-status-pill">
+      <span class="status-dot"></span><span id="nav-stat-txt">Connecting</span>
+    </div>
+    <button class="burger" id="burger" onclick="toggleDrawer()">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<!-- Mobile drawer -->
+<div class="mobile-drawer" id="drawer">
+  <button class="drawer-link active" id="dl-home"  onclick="showPage('home');toggleDrawer()">🏠 Home</button>
+  <button class="drawer-link"        id="dl-user"  onclick="showPage('user');toggleDrawer()">🤖 My Bot</button>
+  <button class="drawer-link"        id="dl-admin" onclick="showPage('admin');toggleDrawer()">👑 Admin</button>
+</div>
+
+<!-- ═══════════════════════════════════
+     PAGE: HOME
+════════════════════════════════════ -->
+<div class="page active" id="pg-home">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-eyebrow"><span class="status-dot"></span> WhatsApp MD Bot — Online</div>
+    <h1 class="hero-title">
+      One Bot.<br/>
+      <span class="line2">Infinite Power.</span>
+    </h1>
+    <p class="hero-sub">500+ commands, multilingual AI, pair-code only deployment, real-time admin panel — everything at one URL.</p>
+    <div class="hero-btns">
+      <button class="btn btn-fire" onclick="scrollToPair()">⚡ Pair My Bot</button>
+      <button class="btn btn-neon" onclick="showPage('user')">🔍 My Bot Status</button>
     </div>
   </div>
 
-  <!-- Stats bar -->
-  <div class="stats-bar">
-    <div class="stat-cell"><div class="stat-n" id="ls-users">—</div><div class="stat-l">Users</div></div>
-    <div class="stat-cell"><div class="stat-n" id="ls-cmds">500+</div><div class="stat-l">Commands</div></div>
-    <div class="stat-cell"><div class="stat-n" id="ls-up">—</div><div class="stat-l">Uptime</div></div>
+  <!-- HEX STATS -->
+  <div class="hex-stats">
+    <div class="hex-stat"><div class="hex-bg"></div><div class="hex-content"><div class="hex-val" id="hs-users">—</div><div class="hex-lbl">Users</div></div></div>
+    <div class="hex-stat"><div class="hex-bg"></div><div class="hex-content"><div class="hex-val" id="hs-cmds">500+</div><div class="hex-lbl">Commands</div></div></div>
+    <div class="hex-stat"><div class="hex-bg"></div><div class="hex-content"><div class="hex-val" id="hs-up">—</div><div class="hex-lbl">Uptime</div></div></div>
+    <div class="hex-stat"><div class="hex-bg"></div><div class="hex-content"><div class="hex-val" id="hs-online">—</div><div class="hex-lbl">Online</div></div></div>
+    <div class="hex-stat"><div class="hex-bg"></div><div class="hex-content"><div class="hex-val" id="hs-srv">—</div><div class="hex-lbl">Servers</div></div></div>
   </div>
 
-  <!-- Tabs: Pair / Check / Guide -->
-  <div class="view-tabs">
-    <button class="view-tab on" onclick="ltab('pair',this)">🔗 Pair Bot</button>
-    <button class="view-tab" onclick="ltab('check',this)">🔍 My Bot</button>
-    <button class="view-tab" onclick="ltab('guide',this)">📖 Guide</button>
+  <!-- PAIR SECTION -->
+  <div class="container-sm" id="pair-section">
+    <div style="text-align:center;margin-bottom:32px">
+      <div class="section-tag">Deploy</div>
+      <h2 class="section-h">Connect Your <span class="hl">WhatsApp</span></h2>
+      <p class="section-sub" style="margin:0 auto">Enter your phone number to generate a pairing code. No QR, no session file.</p>
+    </div>
+
+    <div class="pair-card">
+      <div class="pair-card-title">⚡ Generate Pairing Code</div>
+
+      <div class="tab-pills">
+        <button class="tab-pill on" onclick="htab('pair',this)">🔗 New Pair</button>
+        <button class="tab-pill"    onclick="htab('check',this)">🔍 Check ID</button>
+        <button class="tab-pill"    onclick="htab('guide',this)">📖 Guide</button>
+      </div>
+
+      <!-- NEW PAIR -->
+      <div class="tab-pane on" id="htp-pair">
+        <div class="field">
+          <label>Phone Number (with country code, no +)</label>
+          <input type="tel" id="pair-phone" placeholder="923001234567" inputmode="numeric" style="font-family:var(--ff-mono);letter-spacing:.06em;font-size:1rem"/>
+        </div>
+        <div class="flash" id="pair-flash"></div>
+        <button class="btn btn-fire btn-full" onclick="doPair()">⚡ Generate Pairing Code</button>
+
+        <div class="code-box" id="code-box">
+          <div class="code-box-label">Your Pairing Code</div>
+          <div class="code-digits" id="code-digits">— — — —</div>
+          <div class="code-hint">Open WhatsApp → <strong>⋮</strong> → <strong>Linked Devices</strong> → <strong>Link a Device</strong> → Enter this code</div>
+        </div>
+
+        <div class="deploy-reveal" id="deploy-reveal">
+          <div class="deploy-label">Your Deploy ID — Save This!</div>
+          <div class="deploy-val" id="deploy-val">—</div>
+          <div class="deploy-sub">The bot will also WhatsApp this to you. Use it in "My Bot" tab anytime.</div>
+        </div>
+
+        <div style="margin-top:20px;padding-top:20px;border-top:1px solid var(--b1);display:flex;gap:10px">
+          <button class="btn btn-neon btn-full" onclick="showPage('user')" style="font-size:.65rem">👤 Go to My Bot →</button>
+          <button class="btn btn-ghost btn-full" onclick="showPage('admin')" style="font-size:.65rem">👑 Admin Panel →</button>
+        </div>
+      </div>
+
+      <!-- CHECK ID -->
+      <div class="tab-pane" id="htp-check">
+        <div class="field">
+          <label>Enter Your Deploy ID</label>
+          <input type="text" id="check-id" placeholder="REDXABCD1234" style="text-transform:uppercase;font-family:var(--ff-mono);letter-spacing:.1em;font-size:1rem" oninput="this.value=this.value.toUpperCase()"/>
+        </div>
+        <div class="flash" id="check-flash"></div>
+        <button class="btn btn-neon btn-full" onclick="doCheckId()">🔍 Check Status</button>
+        <div style="margin-top:14px;text-align:center">
+          <button class="btn btn-ghost" onclick="goUserPortal()" style="font-size:.65rem">Open Full User Portal →</button>
+        </div>
+      </div>
+
+      <!-- GUIDE -->
+      <div class="tab-pane" id="htp-guide">
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;gap:12px;align-items:flex-start">
+            <div style="min-width:26px;height:26px;border-radius:50%;background:rgba(0,245,255,.1);border:1px solid rgba(0,245,255,.3);display:flex;align-items:center;justify-content:center;font-family:var(--ff-head);font-size:.7rem;color:var(--neon);flex-shrink:0">1</div>
+            <div style="font-family:var(--ff-sub);font-size:.84rem;color:var(--t2);padding-top:3px"><strong style="color:var(--t1)">Fork & deploy</strong> the repo to Railway / Render / Heroku</div>
+          </div>
+          <div style="display:flex;gap:12px;align-items:flex-start">
+            <div style="min-width:26px;height:26px;border-radius:50%;background:rgba(0,245,255,.1);border:1px solid rgba(0,245,255,.3);display:flex;align-items:center;justify-content:center;font-family:var(--ff-head);font-size:.7rem;color:var(--neon);flex-shrink:0">2</div>
+            <div style="font-family:var(--ff-sub);font-size:.84rem;color:var(--t2);padding-top:3px">Set env vars: <code style="font-family:var(--ff-mono);font-size:.75rem;color:var(--neon)">OWNER_NUMBER</code>, <code style="font-family:var(--ff-mono);font-size:.75rem;color:var(--neon)">BOT_NAME</code>, <code style="font-family:var(--ff-mono);font-size:.75rem;color:var(--neon)">PREFIX=.</code></div>
+          </div>
+          <div style="display:flex;gap:12px;align-items:flex-start">
+            <div style="min-width:26px;height:26px;border-radius:50%;background:rgba(0,245,255,.1);border:1px solid rgba(0,245,255,.3);display:flex;align-items:center;justify-content:center;font-family:var(--ff-head);font-size:.7rem;color:var(--neon);flex-shrink:0">3</div>
+            <div style="font-family:var(--ff-sub);font-size:.84rem;color:var(--t2);padding-top:3px"><strong style="color:var(--t1)">Come here</strong> — enter your phone number above</div>
+          </div>
+          <div style="display:flex;gap:12px;align-items:flex-start">
+            <div style="min-width:26px;height:26px;border-radius:50%;background:rgba(0,245,255,.1);border:1px solid rgba(0,245,255,.3);display:flex;align-items:center;justify-content:center;font-family:var(--ff-head);font-size:.7rem;color:var(--neon);flex-shrink:0">4</div>
+            <div style="font-family:var(--ff-sub);font-size:.84rem;color:var(--t2);padding-top:3px">Enter code in WhatsApp → ⋮ → <strong style="color:var(--t1)">Linked Devices</strong> → Link a Device</div>
+          </div>
+          <div style="display:flex;gap:12px;align-items:flex-start">
+            <div style="min-width:26px;height:26px;border-radius:50%;background:rgba(0,245,255,.1);border:1px solid rgba(0,245,255,.3);display:flex;align-items:center;justify-content:center;font-family:var(--ff-head);font-size:.7rem;color:var(--neon);flex-shrink:0">5</div>
+            <div style="font-family:var(--ff-sub);font-size:.84rem;color:var(--t2);padding-top:3px"><strong style="color:var(--t1)">Save your Deploy ID</strong> — use it in My Bot tab anytime</div>
+          </div>
+          <div style="display:flex;gap:12px;align-items:flex-start">
+            <div style="min-width:26px;height:26px;border-radius:50%;background:rgba(0,245,255,.1);border:1px solid rgba(0,245,255,.3);display:flex;align-items:center;justify-content:center;font-family:var(--ff-head);font-size:.7rem;color:var(--neon);flex-shrink:0">6</div>
+            <div style="font-family:var(--ff-sub);font-size:.84rem;color:var(--t2);padding-top:3px">Type <code style="font-family:var(--ff-mono);font-size:.75rem;color:var(--fire)">.menu</code> to see all commands. Admin panel: default <code style="font-family:var(--ff-mono);font-size:.75rem;color:var(--amber)">redx / redx</code></div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <!-- PAIR -->
-  <div class="tab-pane on" id="ltp-pair">
-    <div class="card">
-      <div class="card-head"><div class="card-title">Generate Pairing Code</div></div>
-      <div class="field"><label>Phone Number (with country code, no +)</label>
-        <input type="tel" id="pair-phone" placeholder="923001234567" inputmode="numeric"/>
-      </div>
-      <div class="flash" id="pf"></div>
-      <button class="btn btn-fire btn-full" onclick="doPair()">⚡ Generate Code</button>
-
-      <div class="code-reveal" id="code-reveal">
-        <div class="code-lbl">Your Pairing Code</div>
-        <div class="code-val" id="code-val">— — — —</div>
-        <div class="code-hint">Open WhatsApp → <strong>⋮</strong> → <strong>Linked Devices</strong> → <strong>Link a Device</strong> → enter this code</div>
-      </div>
-      <div class="deploy-pill" id="deploy-pill">
-        <div class="deploy-lbl">Your Deploy ID — Save this!</div>
-        <div class="deploy-id" id="deploy-id-val">—</div>
-        <div class="deploy-sub">The bot will also WhatsApp this to you. Use it in the "My Bot" tab.</div>
-      </div>
+  <!-- FEATURES -->
+  <div class="container">
+    <div style="text-align:center;margin-bottom:32px">
+      <div class="section-tag">Capabilities</div>
+      <h2 class="section-h">What <span class="hlfire">REDXBOT302</span> Can Do</h2>
     </div>
-
-    <div class="card" style="margin-top:14px">
-      <div class="card-head"><div class="card-title">Already have a Deploy ID?</div></div>
-      <div style="display:flex;gap:8px">
-        <input type="text" id="quick-id" placeholder="REDXABCD1234" style="text-transform:uppercase;font-family:var(--mono);letter-spacing:.06em"/>
-        <button class="btn btn-ghost" style="flex-shrink:0" onclick="quickLookup()">Check →</button>
-      </div>
-      <div class="flash" id="qlf" style="margin-top:10px"></div>
-    </div>
-
-    <!-- Quick access buttons -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px">
-      <button class="btn btn-ghost btn-full" onclick="showUserPortal()">👤 User Portal</button>
-      <button class="btn btn-ghost btn-full" onclick="showAdminLogin()">👑 Admin Panel</button>
+    <div class="feat-grid">
+      <div class="feat-card"><div class="feat-icon">🤖</div><div class="feat-name">Multilingual AI</div><div class="feat-desc">GPT, DeepSeek, Urdu/English/Arabic + all languages</div></div>
+      <div class="feat-card"><div class="feat-icon">🎵</div><div class="feat-name">Music & Downloads</div><div class="feat-desc">YouTube, TikTok, Spotify, Instagram with number selection</div></div>
+      <div class="feat-card"><div class="feat-icon">👥</div><div class="feat-name">Group Manager</div><div class="feat-desc">Kick, warn, antilink, welcome/goodbye, polls</div></div>
+      <div class="feat-card"><div class="feat-icon">🛡️</div><div class="feat-name">Anti-Delete</div><div class="feat-desc">Saves all deleted media — video, audio, docs, PDFs</div></div>
+      <div class="feat-card"><div class="feat-icon">🎨</div><div class="feat-name">AI Image Gen</div><div class="feat-desc">Flux, DALL-E, Pollinations — text to image</div></div>
+      <div class="feat-card"><div class="feat-icon">🎮</div><div class="feat-name">Full Games</div><div class="feat-desc">TicTacToe 2P, Hangman, Trivia, Minesweeper</div></div>
+      <div class="feat-card"><div class="feat-icon">📢</div><div class="feat-name">Auto Features</div><div class="feat-desc">Autoreact, autostatus, autotyping, autoreply</div></div>
+      <div class="feat-card"><div class="feat-icon">👁️</div><div class="feat-name">ViewOnce (.vv)</div><div class="feat-desc">Reveal all view-once media with path saving</div></div>
     </div>
   </div>
 
-  <!-- CHECK / MY BOT -->
-  <div class="tab-pane" id="ltp-check">
-    <div class="card">
-      <div class="card-head"><div class="card-title">Enter Deploy ID to Access Your Bot</div></div>
-      <div class="field"><label>Deploy ID</label>
-        <input type="text" id="uid-input" placeholder="REDXABCD1234" style="text-transform:uppercase;font-family:var(--mono);letter-spacing:.08em" oninput="this.value=this.value.toUpperCase()"/>
+</div><!-- /pg-home -->
+
+<!-- ═══════════════════════════════════
+     PAGE: USER PORTAL
+════════════════════════════════════ -->
+<div class="page" id="pg-user">
+
+  <!-- Deploy ID gate -->
+  <div id="user-gate" style="min-height:calc(100vh - 60px);display:flex;align-items:center;justify-content:center;padding:24px">
+    <div class="pair-card" style="max-width:460px;width:100%">
+      <div class="pair-card-title">🤖 Access Your Bot Portal</div>
+      <div class="field">
+        <label>Deploy ID</label>
+        <input type="text" id="uid-input" placeholder="REDXABCD1234" style="text-transform:uppercase;font-family:var(--ff-mono);letter-spacing:.1em;font-size:1rem" oninput="this.value=this.value.toUpperCase()"/>
       </div>
       <div class="flash" id="uid-flash"></div>
-      <button class="btn btn-fire btn-full" onclick="doUserAccess()">Open My Bot Portal →</button>
-    </div>
-  </div>
-
-  <!-- GUIDE -->
-  <div class="tab-pane" id="ltp-guide">
-    <div class="card">
-      <div class="card-head"><div class="card-title">How to Deploy</div></div>
-      <div class="steps">
-        <div class="step"><div class="step-n">1</div><div class="step-t"><strong>Fork the repo</strong> — github.com/AbdulRehman19721986/REDXBOT-MD</div></div>
-        <div class="step"><div class="step-n">2</div><div class="step-t"><strong>Deploy to Railway / Render / Heroku</strong> — connect GitHub repo</div></div>
-        <div class="step"><div class="step-n">3</div><div class="step-t"><strong>Set env vars</strong> — OWNER_NUMBER, BOT_NAME, PREFIX, PORT=3000</div></div>
-        <div class="step"><div class="step-n">4</div><div class="step-t"><strong>Come back here</strong> — enter your phone, generate pairing code</div></div>
-        <div class="step"><div class="step-n">5</div><div class="step-t"><strong>Enter code in WhatsApp</strong> → ⋮ → Linked Devices → Link a Device</div></div>
-        <div class="step"><div class="step-n">6</div><div class="step-t"><strong>Save your Deploy ID</strong> — use it to access the User Portal anytime</div></div>
-        <div class="step"><div class="step-n">7</div><div class="step-t"><strong>Admin Panel</strong> — click "Admin Panel" button, default: <strong>redx / redx</strong></div></div>
+      <button class="btn btn-neon btn-full" onclick="doUserAccess()">Open My Bot Portal →</button>
+      <div style="margin-top:12px;text-align:center">
+        <button class="btn btn-ghost btn-sm" onclick="showPage('home')">← Back to Home</button>
       </div>
     </div>
-    <div class="card" style="margin-top:14px">
-      <div class="card-head"><div class="card-title">Key Commands</div></div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:.78rem">
-        <div style="background:rgba(0,0,0,.2);border-radius:8px;padding:9px 12px"><span style="color:var(--fire);font-family:var(--mono)">.menu</span><div style="color:var(--t2);margin-top:2px">Numbered category menu</div></div>
-        <div style="background:rgba(0,0,0,.2);border-radius:8px;padding:9px 12px"><span style="color:var(--fire);font-family:var(--mono)">.ai &lt;q&gt;</span><div style="color:var(--t2);margin-top:2px">AI chat (Urdu/English/all)</div></div>
-        <div style="background:rgba(0,0,0,.2);border-radius:8px;padding:9px 12px"><span style="color:var(--fire);font-family:var(--mono)">.tts &lt;text&gt;</span><div style="color:var(--t2);margin-top:2px">Text to voice</div></div>
-        <div style="background:rgba(0,0,0,.2);border-radius:8px;padding:9px 12px"><span style="color:var(--fire);font-family:var(--mono)">.vv</span><div style="color:var(--t2);margin-top:2px">Reveal view-once</div></div>
-        <div style="background:rgba(0,0,0,.2);border-radius:8px;padding:9px 12px"><span style="color:var(--fire);font-family:var(--mono)">.gimage &lt;p&gt;</span><div style="color:var(--t2);margin-top:2px">AI image gen</div></div>
-        <div style="background:rgba(0,0,0,.2);border-radius:8px;padding:9px 12px"><span style="color:var(--fire);font-family:var(--mono)">.panel</span><div style="color:var(--t2);margin-top:2px">Manage bot from chat</div></div>
-      </div>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px">
-      <a class="btn btn-ghost btn-full" href="https://github.com/AbdulRehman19721986/REDXBOT-MD" target="_blank">⭐ GitHub</a>
-      <a class="btn btn-ghost btn-full" href="https://chat.whatsapp.com/LhSmx2SeXX75r8I2bxsNDo" target="_blank">💬 WhatsApp</a>
-      <a class="btn btn-ghost btn-full" href="https://t.me/TeamRedxhacker2" target="_blank">📢 Telegram</a>
-      <a class="btn btn-ghost btn-full" href="https://youtube.com/@rootmindtech" target="_blank">▶️ YouTube</a>
-    </div>
   </div>
 
-</div>
-</div>
-</div>
-
-<!-- ═══════════════════════════════════════════════════════
-     VIEW 2: USER PORTAL (Deploy ID gated)
-════════════════════════════════════════════════════════ -->
-<div class="view z1" id="v-user">
-<div class="user-shell">
-
-  <!-- Topbar -->
-  <div class="user-topbar">
-    <div class="tb-logo">REDXBOT302</div>
-    <div class="tb-sep"></div>
-    <div class="tb-pg" id="utb-pg">My Bot</div>
-    <div class="live-pill"><span class="live-dot"></span><span>Live</span></div>
-    <div class="tb-user">
-      <div class="tb-avatar" id="utb-av">U</div>
-      <div>
-        <div class="tb-uname" id="utb-name">User</div>
-        <div class="tb-role">user</div>
-      </div>
+  <!-- Portal shell (shown after ID verified) -->
+  <div class="portal-layout" id="user-shell" style="display:none">
+    <div class="portal-sidebar">
+      <div class="pnav-section">My Bot</div>
+      <button class="pnav-btn on" onclick="upage('status',this,'Bot Status')"><span class="ic">🤖</span>Bot Status</button>
+      <button class="pnav-btn"    onclick="upage('servers',this,'Deploy Servers')"><span class="ic">🖥️</span>Deploy Servers</button>
+      <div class="pnav-section">Updates</div>
+      <button class="pnav-btn"    onclick="upage('anns',this,'Announcements')"><span class="ic">📢</span>Announcements</button>
     </div>
-    <button class="btn-logout" onclick="goLanding()" title="Back">← Back</button>
-  </div>
 
-  <!-- Sidebar -->
-  <div class="user-sidebar">
-    <div class="unav-lbl">My Bot</div>
-    <button class="unav-btn on" onclick="upage('status',this,'Bot Status')"><span class="ic">🤖</span>Bot Status</button>
-    <button class="unav-btn" onclick="upage('servers',this,'Deploy Servers')"><span class="ic">🖥️</span>Deploy Servers</button>
-    <div class="unav-lbl">Updates</div>
-    <button class="unav-btn" onclick="upage('announcements',this,'Announcements')"><span class="ic">📢</span>Announcements</button>
-  </div>
+    <div class="portal-main">
 
-  <!-- Main -->
-  <div class="user-main">
-
-    <!-- Bot Status -->
-    <div class="upg on" id="upg-status">
-      <div class="pg-h"><h2>Bot Status</h2><p>Your bot's current connection status and info</p></div>
-      <div class="flash" id="usf"></div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
-        <div class="card">
-          <div class="card-head">
-            <div class="card-title">Connection</div>
-            <span class="badge b-offline" id="u-status-badge">Checking…</span>
+      <div class="upg on" id="upg-status">
+        <div class="pg-head"><h2>Bot Status</h2><p>Real-time connection info for your Deploy ID</p></div>
+        <div class="flash" id="u-flash"></div>
+        <div class="g2">
+          <div class="card">
+            <div class="card-head"><div class="card-title">Connection</div><span class="badge b-off" id="u-badge">Checking…</span></div>
+            <div class="status-row"><div class="ic2" style="background:rgba(255,77,28,.1)">📱</div><div class="lbody">Phone Number</div><div class="rval" id="u-phone">—</div></div>
+            <div class="status-row"><div class="ic2" style="background:rgba(0,245,255,.08)">🔑</div><div class="lbody">Deploy ID</div><div class="rval mono" style="color:var(--amber)" id="u-deployid">—</div></div>
+            <div class="status-row"><div class="ic2" style="background:rgba(0,230,118,.08)">🌍</div><div class="lbody">Status</div><div class="rval" id="u-status">—</div></div>
+            <div class="status-row"><div class="ic2" style="background:rgba(255,215,64,.08)">📅</div><div class="lbody">Registered</div><div class="rval" id="u-date">—</div></div>
+            <div class="status-row"><div class="ic2" style="background:rgba(168,85,247,.08)">👁️</div><div class="lbody">Last Seen</div><div class="rval" id="u-seen">—</div></div>
           </div>
-          <div style="display:grid;gap:9px">
-            <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:rgba(0,0,0,.2);border-radius:var(--rs);font-size:.82rem">
-              <span style="font-size:.9rem">📱</span><span style="color:var(--t2);flex:1">Phone</span><span class="mono" id="u-phone">—</span>
-            </div>
-            <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:rgba(0,0,0,.2);border-radius:var(--rs);font-size:.82rem">
-              <span style="font-size:.9rem">🔑</span><span style="color:var(--t2);flex:1">Deploy ID</span><span class="mono" style="color:var(--amber)" id="u-deploy">—</span>
-            </div>
-            <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:rgba(0,0,0,.2);border-radius:var(--rs);font-size:.82rem">
-              <span style="font-size:.9rem">📅</span><span style="color:var(--t2);flex:1">Registered</span><span class="mono" id="u-date">—</span>
-            </div>
-            <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:rgba(0,0,0,.2);border-radius:var(--rs);font-size:.82rem">
-              <span style="font-size:.9rem">👁️</span><span style="color:var(--t2);flex:1">Last Seen</span><span class="mono" id="u-seen">—</span>
+          <div class="card">
+            <div class="card-head"><div class="card-title">Quick Actions</div></div>
+            <div style="display:grid;gap:9px">
+              <button class="btn btn-neon btn-full" onclick="uRefresh()">🔄 Refresh Status</button>
+              <button class="btn btn-ghost btn-full" onclick="upage('servers',document.querySelector('[onclick*=servers]'),'Deploy Servers')">🖥️ View Servers</button>
+              <button class="btn btn-ghost btn-full" onclick="copyText(document.getElementById('u-deployid').textContent,'u-flash')">📋 Copy Deploy ID</button>
+              <button class="btn btn-ghost btn-full" onclick="showPage('home')">← Back to Home</button>
             </div>
           </div>
         </div>
-        <div class="card">
-          <div class="card-head"><div class="card-title">Quick Actions</div></div>
-          <div style="display:grid;gap:8px">
-            <button class="btn btn-fire btn-full" onclick="uRefresh()">🔄 Refresh Status</button>
-            <button class="btn btn-ghost btn-full" onclick="upage('servers',document.querySelector('[onclick*=servers]'),'Deploy Servers')">🖥️ View Servers</button>
-            <button class="btn btn-ghost btn-full" onclick="navigator.clipboard?.writeText(document.getElementById('u-deploy').textContent)">📋 Copy Deploy ID</button>
-          </div>
+      </div>
+
+      <div class="upg" id="upg-servers">
+        <div class="pg-head"><h2>Deploy Servers</h2><p>Available deployment servers — click to open</p></div>
+        <div class="flash" id="srv-flash"></div>
+        <div class="srv-grid" id="user-srv-grid">
+          <div style="color:var(--t2);grid-column:1/-1;padding:20px;text-align:center"><span class="spin"></span> Loading servers…</div>
         </div>
       </div>
-    </div>
 
-    <!-- Deploy Servers -->
-    <div class="upg" id="upg-servers">
-      <div class="pg-h"><h2>Deploy Servers</h2><p>Choose a deployment server for your bot</p></div>
-      <div id="server-grid-user" class="server-grid">
-        <div style="color:var(--t2);padding:20px;grid-column:1/-1;text-align:center"><span class="spin"></span> Loading servers…</div>
+      <div class="upg" id="upg-anns">
+        <div class="pg-head"><h2>Announcements</h2><p>Messages from the bot admin</p></div>
+        <div id="u-ann-list"><div style="color:var(--t2);padding:20px;text-align:center"><span class="spin"></span></div></div>
       </div>
+
     </div>
+  </div>
+</div><!-- /pg-user -->
 
-    <!-- Announcements -->
-    <div class="upg" id="upg-announcements">
-      <div class="pg-h"><h2>Announcements</h2><p>Messages from the bot admin</p></div>
-      <div id="u-ann-list">
-        <div style="color:var(--t2);padding:20px;text-align:center"><span class="spin"></span> Loading…</div>
+<!-- ═══════════════════════════════════
+     PAGE: ADMIN PANEL
+════════════════════════════════════ -->
+<div class="page" id="pg-admin">
+
+  <!-- Login gate -->
+  <div id="admin-gate" style="display:flex">
+    <div class="login-card">
+      <div class="login-logo-row">
+        <div class="login-flame">🔒</div>
+        <div><div class="login-brand-text">Admin Panel</div><div class="login-brand-sub">REDXBOT302 — Restricted Access</div></div>
       </div>
-    </div>
-
-  </div><!-- /user-main -->
-</div><!-- /user-shell -->
-</div>
-
-<!-- ═══════════════════════════════════════════════════════
-     VIEW 3: ADMIN PANEL
-════════════════════════════════════════════════════════ -->
-<div class="view z1" id="v-admin">
-
-  <!-- Admin login overlay -->
-  <div id="admin-login-overlay" style="position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:100">
-    <div style="width:380px;background:var(--s1);border:1px solid var(--b2);border-radius:20px;padding:40px 36px;box-shadow:0 32px 80px rgba(0,0,0,.5)">
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:28px">
-        <div style="width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,var(--fire),var(--ember));display:flex;align-items:center;justify-content:center;font-size:1.3rem;box-shadow:0 8px 24px var(--fireglow)">🔒</div>
-        <div>
-          <div style="font-weight:800;font-size:1.1rem">Admin Panel</div>
-          <div style="font-size:.75rem;color:var(--t2)">REDXBOT302 — Restricted Access</div>
-        </div>
-      </div>
-      <div class="flash" id="alf"></div>
+      <div class="flash" id="al-flash"></div>
       <div class="field"><label>Username</label><input type="text" id="alu" placeholder="redx" autocomplete="off"/></div>
       <div class="field"><label>Password</label><input type="password" id="alp" placeholder="••••••••" onkeydown="if(event.key==='Enter')doAdminLogin()"/></div>
-      <button class="btn btn-fire btn-full" style="margin-top:4px" onclick="doAdminLogin()">Enter Admin Panel →</button>
-      <button class="btn btn-ghost btn-full" style="margin-top:8px" onclick="goLanding()">← Back to Portal</button>
+      <button class="btn btn-fire btn-full" onclick="doAdminLogin()">Enter Admin Panel →</button>
+      <button class="btn btn-ghost btn-full" style="margin-top:8px" onclick="showPage('home')">← Back to Home</button>
     </div>
   </div>
 
-  <!-- Admin shell (shown after login) -->
-  <div class="admin-shell" id="admin-shell" style="display:none">
-    <!-- Topbar -->
-    <div class="admin-topbar">
-      <div class="tb-logo">REDXBOT302</div>
-      <div class="tb-sep"></div>
-      <div class="tb-pg" id="atb-pg">Dashboard</div>
-      <div class="live-pill"><span class="live-dot"></span><span id="atb-live">Live</span></div>
-      <div class="tb-user">
-        <div class="tb-avatar">A</div>
-        <div><div class="tb-uname" id="atb-uname">Admin</div><div class="tb-role">admin</div></div>
-      </div>
-      <button class="btn-logout" onclick="adminLogout()">⏻ Logout</button>
-    </div>
-
-    <!-- Sidebar -->
+  <!-- Admin shell -->
+  <div class="admin-layout" id="admin-shell" style="display:none">
     <div class="admin-sidebar">
       <div class="anav-sec">Overview</div>
       <button class="anav-btn on" onclick="apage('dash',this,'Dashboard')"><span class="ic">📊</span>Dashboard</button>
-
       <div class="anav-sec">Users</div>
-      <button class="anav-btn" onclick="apage('users',this,'User Management')"><span class="ic">👥</span>Users<span class="anav-badge" id="nb-users">—</span></button>
+      <button class="anav-btn" onclick="apage('users',this,'User Management')"><span class="ic">👥</span>Users<span class="anav-badge ab-fire" id="nb-users">—</span></button>
       <button class="anav-btn" onclick="apage('activity',this,'Activity Log')"><span class="ic">📋</span>Activity</button>
-
       <div class="anav-sec">Servers</div>
-      <button class="anav-btn" onclick="apage('servers',this,'Server Manager')"><span class="ic">🖥️</span>Servers<span class="anav-badge g" id="nb-servers">—</span></button>
-
+      <button class="anav-btn" onclick="apage('servers',this,'Server Manager')"><span class="ic">🖥️</span>Servers<span class="anav-badge ab-green" id="nb-servers">—</span></button>
       <div class="anav-sec">Bot</div>
-      <button class="anav-btn" onclick="apage('plugins',this,'Plugin Manager')"><span class="ic">🧩</span>Plugins<span class="anav-badge a" id="nb-plugins">—</span></button>
+      <button class="anav-btn" onclick="apage('plugins',this,'Plugin Manager')"><span class="ic">🧩</span>Plugins<span class="anav-badge ab-amber" id="nb-plugins">—</span></button>
       <button class="anav-btn" onclick="apage('files',this,'File Manager')"><span class="ic">📁</span>Files</button>
       <button class="anav-btn" onclick="apage('config',this,'Bot Config')"><span class="ic">⚙️</span>Config</button>
-
       <div class="anav-sec">Admin</div>
       <button class="anav-btn" onclick="apage('announce',this,'Announcements')"><span class="ic">📢</span>Announce</button>
       <button class="anav-btn" onclick="apage('security',this,'Security')"><span class="ic">🔒</span>Security</button>
-
       <div class="admin-sb-footer">
-        <div style="display:flex;align-items:center;gap:7px">
-          <div style="width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 7px var(--green)" id="sb-dot"></div>
+        <div class="sb-live">
+          <div style="width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:statusblink 2s ease-in-out infinite" id="sb-dot"></div>
           <span id="sb-txt">Connected</span>
         </div>
       </div>
     </div>
 
-    <!-- Main -->
     <div class="admin-main">
 
       <!-- DASHBOARD -->
       <div class="apg on" id="apg-dash">
-        <div class="pg-h"><h2>Dashboard</h2><p>Real-time bot overview</p></div>
-        <div class="stat-row">
-          <div class="scard"><div class="scard-ico fire">👥</div><div class="scard-v" id="ad-users">—</div><div class="scard-l">Users</div></div>
-          <div class="scard"><div class="scard-ico green">🟢</div><div class="scard-v" id="ad-online">—</div><div class="scard-l">Online</div></div>
-          <div class="scard"><div class="scard-ico blue">🖥️</div><div class="scard-v" id="ad-servers">—</div><div class="scard-l">Servers</div></div>
-          <div class="scard"><div class="scard-ico amber">🧩</div><div class="scard-v" id="ad-plugins">—</div><div class="scard-l">Plugins</div></div>
-          <div class="scard"><div class="scard-ico purple">⏱️</div><div class="scard-v" id="ad-up">—</div><div class="scard-l">Uptime</div></div>
+        <div class="pg-head"><h2>Dashboard</h2><p>Real-time bot overview</p></div>
+        <div class="stat-grid">
+          <div class="stat-card"><div class="stat-val" id="ad-users">—</div><div class="stat-lbl">👥 Users</div></div>
+          <div class="stat-card"><div class="stat-val" id="ad-online">—</div><div class="stat-lbl">🟢 Online</div></div>
+          <div class="stat-card"><div class="stat-val" id="ad-servers">—</div><div class="stat-lbl">🖥️ Servers</div></div>
+          <div class="stat-card"><div class="stat-val" id="ad-plugins">—</div><div class="stat-lbl">🧩 Plugins</div></div>
+          <div class="stat-card"><div class="stat-val" id="ad-up">—</div><div class="stat-lbl">⏱️ Uptime</div></div>
         </div>
         <div class="g2">
           <div class="card">
-            <div class="card-head"><div class="card-title">Live Feed</div><div class="live-pill" style="font-size:.64rem;padding:2px 9px"><span class="live-dot"></span>SSE</div></div>
-            <div class="live-feed" id="a-live-feed">
-              <div class="feed-row"><div class="feed-dot b"></div><div class="feed-body">Connecting to live feed…<div class="feed-time">now</div></div></div>
+            <div class="card-head"><div class="card-title">Live Activity Feed</div><div class="nav-status" style="font-size:.62rem;padding:3px 10px"><span class="status-dot"></span>SSE</div></div>
+            <div class="live-feed" id="a-feed">
+              <div class="feed-row"><div class="feed-dot fd-b"></div><div class="feed-body">Connecting to live feed…<div class="feed-time">now</div></div></div>
             </div>
           </div>
           <div class="card">
             <div class="card-head"><div class="card-title">Quick Actions</div></div>
-            <div style="display:grid;gap:8px">
-              <button class="btn btn-fire btn-full" onclick="apage('users',document.querySelector('[onclick*=users]'),'User Management')">👥 Manage Users</button>
-              <button class="btn btn-ghost btn-full" onclick="apage('servers',document.querySelector('[onclick*=servers]'),'Server Manager')">🖥️ Manage Servers</button>
-              <button class="btn btn-ghost btn-full" onclick="apage('plugins',document.querySelector('[onclick*=plugins]'),'Plugin Manager')">🧩 Plugin Manager</button>
-              <button class="btn btn-amber btn-full" onclick="aDash()">🔄 Refresh Stats</button>
+            <div style="display:grid;gap:9px">
+              <button class="btn btn-fire btn-full btn-sm" onclick="apage('users',document.querySelector('[onclick*=users]'),'User Management')">👥 Manage Users</button>
+              <button class="btn btn-neon btn-full btn-sm" onclick="apage('servers',document.querySelector('[onclick*=servers]'),'Server Manager')">🖥️ Manage Servers</button>
+              <button class="btn btn-ghost btn-full btn-sm" onclick="apage('plugins',document.querySelector('[onclick*=plugins]'),'Plugin Manager')">🧩 Plugin Manager</button>
+              <button class="btn btn-amber btn-full btn-sm" onclick="aDash()">🔄 Refresh Stats</button>
+              <button class="btn btn-ghost btn-full btn-sm" onclick="adminLogout()">⏻ Logout</button>
             </div>
           </div>
         </div>
@@ -605,81 +885,69 @@ tbody tr:hover td{background:rgba(255,255,255,.02)}
 
       <!-- USERS -->
       <div class="apg" id="apg-users">
-        <div class="pg-h"><h2>User Management</h2><p>All registered Deploy IDs and their status</p></div>
-        <div class="flash" id="auf"></div>
+        <div class="pg-head"><h2>User Management</h2><p>All registered Deploy IDs and their bot status</p></div>
+        <div class="flash" id="uf"></div>
         <div class="card">
           <div class="card-head">
             <div class="card-title">All Users</div>
-            <div style="display:flex;gap:8px">
-              <button class="btn btn-ghost btn-sm" onclick="loadAdminUsers()">🔄</button>
-              <button class="btn btn-red btn-sm" onclick="bulkAction('ban')">🚫 Ban Selected</button>
-              <button class="btn btn-red btn-sm" onclick="bulkAction('delete')">🗑️ Delete Selected</button>
+            <div style="display:flex;gap:7px">
+              <button class="btn btn-ghost btn-xs" onclick="loadUsers()">🔄</button>
+              <button class="btn btn-red btn-xs" onclick="bulkBan()">🚫 Ban Sel.</button>
+              <button class="btn btn-red btn-xs" onclick="bulkDelete()">🗑️ Del. Sel.</button>
             </div>
           </div>
           <input type="text" id="user-search" placeholder="Search by phone or Deploy ID…" oninput="filterUsers()" style="margin-bottom:12px"/>
-          <div class="tbl-wrap" id="user-tbl">
-            <div style="padding:20px;text-align:center;color:var(--t2)"><span class="spin"></span></div>
-          </div>
+          <div class="tbl-wrap" id="user-tbl"><div style="padding:20px;text-align:center;color:var(--t2)"><span class="spin"></span></div></div>
         </div>
       </div>
 
       <!-- ACTIVITY -->
       <div class="apg" id="apg-activity">
-        <div class="pg-h"><h2>Activity Log</h2><p>Connection, pair and command events</p></div>
+        <div class="pg-head"><h2>Activity Log</h2><p>Connection, disconnect and pair events</p></div>
         <div class="card">
-          <div class="card-head"><div class="card-title">Recent Events</div><button class="btn btn-ghost btn-sm" onclick="loadActivity()">🔄</button></div>
-          <div id="a-activity-list" style="max-height:500px;overflow-y:auto">
-            <div style="padding:20px;text-align:center;color:var(--t2)"><span class="spin"></span></div>
-          </div>
+          <div class="card-head"><div class="card-title">Recent Events</div><button class="btn btn-ghost btn-xs" onclick="loadActivity()">🔄</button></div>
+          <div id="act-list" style="max-height:500px;overflow-y:auto"><div style="padding:20px;text-align:center;color:var(--t2)"><span class="spin"></span></div></div>
         </div>
       </div>
 
-      <!-- SERVER MANAGER -->
+      <!-- SERVERS -->
       <div class="apg" id="apg-servers">
-        <div class="pg-h"><h2>Server Manager</h2><p>Add Railway/Render/Heroku deployment links — users select from these</p></div>
-        <div class="flash" id="asf"></div>
-        <div class="card" style="margin-bottom:16px">
+        <div class="pg-head"><h2>Server Manager</h2><p>Add deployment server links — users see these in their portal instantly via SSE</p></div>
+        <div class="flash" id="sf"></div>
+        <div class="card" style="margin-bottom:14px">
           <div class="card-head"><div class="card-title">Add New Server</div></div>
           <div class="g2">
-            <div class="field"><label>Server Name</label><input type="text" id="srv-name" placeholder="e.g. Railway Server 1"/></div>
+            <div class="field"><label>Server Name</label><input type="text" id="srv-name" placeholder="Railway Server 1"/></div>
             <div class="field"><label>Region</label>
-              <select id="srv-region">
-                <option>Global</option><option>US West</option><option>US East</option>
-                <option>Europe</option><option>Asia</option><option>Pakistan</option>
-              </select>
+              <select id="srv-region"><option>Global</option><option>US West</option><option>US East</option><option>Europe</option><option>Asia</option><option>Pakistan</option></select>
             </div>
-            <div class="field"><label>Deploy URL (your Railway/Render link)</label><input type="text" id="srv-url" placeholder="https://your-bot.railway.app"/></div>
+            <div class="field"><label>Deployment URL</label><input type="text" id="srv-url" placeholder="https://your-bot.railway.app"/></div>
             <div class="field"><label>Status</label>
               <select id="srv-status"><option value="online">🟢 Online</option><option value="maintenance">🟡 Maintenance</option><option value="offline">🔴 Offline</option></select>
             </div>
           </div>
-          <div class="field"><label>Notes (optional)</label><textarea id="srv-notes" rows="2" placeholder="Any notes for users about this server…"></textarea></div>
-          <button class="btn btn-fire" onclick="addServer()">🖥️ Add Server</button>
+          <div class="field"><label>Notes (optional)</label><textarea id="srv-notes" rows="2" placeholder="Any notes for users…"></textarea></div>
+          <button class="btn btn-neon" onclick="addServer()">🖥️ Add Server</button>
         </div>
         <div class="card">
-          <div class="card-head"><div class="card-title">All Servers</div><button class="btn btn-ghost btn-sm" onclick="loadAdminServers()">🔄</button></div>
-          <div id="a-server-list">
-            <div style="padding:20px;text-align:center;color:var(--t2)"><span class="spin"></span></div>
-          </div>
+          <div class="card-head"><div class="card-title">All Servers</div><button class="btn btn-ghost btn-xs" onclick="loadAdminServers()">🔄</button></div>
+          <div id="a-srv-list"><div style="padding:20px;text-align:center;color:var(--t2)"><span class="spin"></span></div></div>
         </div>
       </div>
 
       <!-- PLUGINS -->
       <div class="apg" id="apg-plugins">
-        <div class="pg-h"><h2>Plugin Manager</h2><p>Upload, edit and remove plugins. Bot hot-reloads automatically.</p></div>
-        <div class="flash" id="apf"></div>
-        <div class="g2" style="margin-bottom:16px">
+        <div class="pg-head"><h2>Plugin Manager</h2><p>Upload, edit and remove plugins. Bot hot-reloads automatically.</p></div>
+        <div class="flash" id="pf"></div>
+        <div class="g2" style="margin-bottom:14px">
           <div class="card" style="margin:0">
             <div class="card-head"><div class="card-title">Upload Plugin</div></div>
-            <div id="drop-zone" style="border:2px dashed var(--b2);border-radius:var(--rs);padding:22px;text-align:center;cursor:pointer;transition:all .2s"
-              onclick="document.getElementById('pf-input').click()"
-              ondragover="event.preventDefault();this.style.borderColor='var(--fire)'"
-              ondragleave="this.style.borderColor=''"
-              ondrop="pluginDrop(event)">
-              <div style="font-size:1.8rem;margin-bottom:6px">🧩</div>
-              <div style="color:var(--t2);font-size:.8rem">Drop <strong style="color:var(--fire)">.js</strong> here or <span style="color:var(--fire)">browse</span></div>
+            <div class="drop-zone" id="drop-zone" onclick="document.getElementById('pf-file').click()"
+              ondragover="event.preventDefault();this.classList.add('over')" ondragleave="this.classList.remove('over')" ondrop="pluginDrop(event)">
+              <div class="drop-icon">🧩</div>
+              <div class="drop-label">Drop <strong>.js</strong> here or <strong>browse</strong></div>
             </div>
-            <input type="file" id="pf-input" accept=".js" style="display:none" onchange="uploadPlugin(this.files[0])"/>
+            <input type="file" id="pf-file" accept=".js" style="display:none" onchange="uploadPlugin(this.files[0])"/>
           </div>
           <div class="card" style="margin:0">
             <div class="card-head"><div class="card-title">Install from URL</div></div>
@@ -688,58 +956,55 @@ tbody tr:hover td{background:rgba(255,255,255,.02)}
           </div>
         </div>
         <div class="card">
-          <div class="card-head"><div class="card-title">Installed Plugins</div><button class="btn btn-ghost btn-sm" onclick="loadPlugins()">🔄</button></div>
-          <div id="a-plugin-list"><div style="padding:20px;text-align:center;color:var(--t2)"><span class="spin"></span></div></div>
+          <div class="card-head"><div class="card-title">Installed Plugins</div><button class="btn btn-ghost btn-xs" onclick="loadPlugins()">🔄</button></div>
+          <div id="plug-list"><div style="padding:20px;text-align:center;color:var(--t2)"><span class="spin"></span></div></div>
         </div>
-        <div class="editor-wrap" id="plug-editor-wrap">
+        <div class="editor-wrap" id="plug-editor">
           <div class="editor-bar">
-            <span class="editor-fname" id="plug-edit-name">plugin.js</span>
+            <span class="editor-fname" id="plug-fname">plugin.js</span>
             <div class="editor-acts">
               <button class="btn btn-fire btn-sm" onclick="savePlugin()">💾 Save & Reload</button>
-              <button class="btn btn-ghost btn-sm" onclick="closePEditor()">✖</button>
+              <button class="btn btn-ghost btn-sm" onclick="closePEditor()">✖ Close</button>
             </div>
           </div>
-          <textarea class="editor-area" id="plug-editor-area"></textarea>
+          <textarea class="editor-area" id="plug-area"></textarea>
         </div>
       </div>
 
       <!-- FILES -->
       <div class="apg" id="apg-files">
-        <div class="pg-h"><h2>File Manager</h2><p>Browse and edit data/ and plugins/ files</p></div>
-        <div class="flash" id="aff"></div>
+        <div class="pg-head"><h2>File Manager</h2><p>Browse and edit data/ and plugins/ directories</p></div>
+        <div class="flash" id="ff"></div>
         <div class="card">
-          <div id="file-breadcrumb" style="font-size:.77rem;color:var(--t2);margin-bottom:12px;display:flex;align-items:center;gap:5px">📁</div>
+          <div id="file-bread" style="display:flex;align-items:center;gap:5px;font-family:var(--ff-sub);font-size:.75rem;color:var(--t2);margin-bottom:14px">📁</div>
           <div id="file-list"><div style="padding:20px;text-align:center;color:var(--t2)"><span class="spin"></span></div></div>
         </div>
-        <div class="editor-wrap" id="file-editor-wrap">
+        <div class="editor-wrap" id="file-editor">
           <div class="editor-bar">
-            <span class="editor-fname" id="file-edit-name">file</span>
+            <span class="editor-fname" id="file-fname">file</span>
             <div class="editor-acts">
               <button class="btn btn-fire btn-sm" onclick="saveFile()">💾 Save</button>
               <button class="btn btn-red btn-sm" onclick="deleteFile()">🗑️</button>
               <button class="btn btn-ghost btn-sm" onclick="closeFEditor()">✖</button>
             </div>
           </div>
-          <textarea class="editor-area" id="file-editor-area"></textarea>
+          <textarea class="editor-area" id="file-area"></textarea>
         </div>
       </div>
 
       <!-- CONFIG -->
       <div class="apg" id="apg-config">
-        <div class="pg-h"><h2>Bot Config</h2><p>Live settings</p></div>
-        <div class="flash" id="acf"></div>
+        <div class="pg-head"><h2>Bot Config</h2><p>Live settings — applied immediately</p></div>
+        <div class="flash" id="cf"></div>
         <div class="card">
           <div class="g2">
             <div class="field"><label>Bot Name</label><input type="text" id="cfg-name" placeholder="🔥 REDXBOT302 🔥"/></div>
-            <div class="field"><label>Prefix</label><input type="text" id="cfg-pfx" placeholder="."/></div>
+            <div class="field"><label>Command Prefix</label><input type="text" id="cfg-pfx" placeholder="."/></div>
             <div class="field"><label>Owner Number</label><input type="text" id="cfg-own" placeholder="923009842133"/></div>
             <div class="field"><label>Co-Owner Number</label><input type="text" id="cfg-co" placeholder="923183928892"/></div>
             <div class="field"><label>Menu Image URL</label><input type="text" id="cfg-img" placeholder="https://…"/></div>
             <div class="field"><label>Bot Mode</label>
-              <select id="cfg-mode">
-                <option value="public">🌍 Public</option>
-                <option value="private">🔒 Private</option>
-              </select>
+              <select id="cfg-mode"><option value="public">🌍 Public — Anyone can use</option><option value="private">🔒 Private — Owner only</option></select>
             </div>
           </div>
           <button class="btn btn-fire" onclick="saveConfig()">💾 Save Config</button>
@@ -748,352 +1013,366 @@ tbody tr:hover td{background:rgba(255,255,255,.02)}
 
       <!-- ANNOUNCE -->
       <div class="apg" id="apg-announce">
-        <div class="pg-h"><h2>Announcements</h2><p>Post messages visible to all users in the portal</p></div>
-        <div class="flash" id="aanf"></div>
+        <div class="pg-head"><h2>Announcements</h2><p>Post messages visible to all users in their portal (via SSE — live)</p></div>
+        <div class="flash" id="anf"></div>
         <div class="card" style="margin-bottom:14px">
-          <div class="field"><label>Title</label><input type="text" id="ann-title" placeholder="e.g. Server Maintenance"/></div>
-          <div class="field"><label>Message</label><textarea id="ann-body" rows="3" placeholder="Write your announcement…"></textarea></div>
           <div class="g2">
+            <div class="field"><label>Title</label><input type="text" id="ann-title" placeholder="e.g. Server Maintenance"/></div>
             <div class="field"><label>Type</label>
               <select id="ann-type"><option value="info">ℹ️ Info</option><option value="success">✅ Success</option><option value="warning">⚠️ Warning</option><option value="danger">🚨 Alert</option></select>
             </div>
-            <div class="field"><label>Visibility</label>
-              <select id="ann-vis"><option value="all">Everyone</option><option value="admins">Admins only</option></select>
-            </div>
           </div>
-          <button class="btn btn-fire" onclick="postAnn()">📢 Post</button>
+          <div class="field"><label>Message</label><textarea id="ann-body" rows="3" placeholder="Write your announcement…"></textarea></div>
+          <div class="field"><label>Visibility</label>
+            <select id="ann-vis"><option value="all">Everyone</option><option value="admins">Admins only</option></select>
+          </div>
+          <button class="btn btn-fire" onclick="postAnn()">📢 Post Announcement</button>
         </div>
         <div class="card">
-          <div class="card-head"><div class="card-title">Posted</div><button class="btn btn-ghost btn-sm" onclick="loadAnn()">🔄</button></div>
-          <div id="a-ann-list"><div style="padding:20px;text-align:center;color:var(--t2)"><span class="spin"></span></div></div>
+          <div class="card-head"><div class="card-title">Posted</div><button class="btn btn-ghost btn-xs" onclick="loadAnn()">🔄</button></div>
+          <div id="ann-list"><div style="padding:20px;text-align:center;color:var(--t2)"><span class="spin"></span></div></div>
         </div>
       </div>
 
       <!-- SECURITY -->
       <div class="apg" id="apg-security">
-        <div class="pg-h"><h2>Security</h2><p>Change admin credentials. You'll be logged out.</p></div>
-        <div class="flash" id="asecf"></div>
+        <div class="pg-head"><h2>Security</h2><p>Change admin credentials. You will be logged out.</p></div>
+        <div class="flash" id="secf"></div>
         <div class="card" style="max-width:440px">
           <div class="field"><label>New Username (blank = keep current)</label><input type="text" id="sec-u" placeholder="New username"/></div>
           <div class="field"><label>New Password (min 3 chars)</label><input type="password" id="sec-p" placeholder="New password"/></div>
           <div class="field"><label>Confirm Password</label><input type="password" id="sec-c" placeholder="Confirm"/></div>
           <button class="btn btn-red" onclick="changePw()">🔒 Update Credentials</button>
-          <p style="font-size:.73rem;color:var(--t3);margin-top:10px">Stored in <span style="font-family:var(--mono)">data/admin_creds.json</span></p>
+          <p style="font-size:.72rem;color:var(--t3);margin-top:10px;font-family:var(--ff-sub)">Stored in <span style="font-family:var(--ff-mono);color:var(--neon)">data/admin_creds.json</span></p>
         </div>
       </div>
 
     </div><!-- /admin-main -->
   </div><!-- /admin-shell -->
-</div><!-- /v-admin -->
+</div><!-- /pg-admin -->
 
+<!-- ═══════════════════════════════════
+     JAVASCRIPT
+════════════════════════════════════ -->
 <script>
-/*═══════════════════════════════════════════════════════
-  STATE
-═══════════════════════════════════════════════════════*/
 const BASE = window.location.origin;
-let ADMIN_TOKEN = '';
-let USER_DEPLOY_ID = '';
-let allUsersCache = [];
-let sse = null;
-let editingPlugin = '';
-let editingFile   = '';
-let filePath      = 'data';
+let ADMIN_TOKEN  = '';
+let USER_ID      = '';
+let allUsers     = [];
+let sse          = null;
+let editingPlug  = '';
+let editingFile  = '';
+let filePath     = 'data';
 
-/*═══════════════════════════════════════════════════════
-  HELPERS
-═══════════════════════════════════════════════════════*/
-const ah  = () => ({ 'Content-Type':'application/json', 'x-admin-auth': ADMIN_TOKEN });
-const dah = (id) => ({ 'Content-Type':'application/json', 'x-deploy-id': id });
+/* ── HELPERS ── */
+const ah  = () => ({'Content-Type':'application/json','x-admin-auth':ADMIN_TOKEN});
+const dah = id => ({'Content-Type':'application/json','x-deploy-id':id});
 
 function flash(id, msg, type, dur=5000) {
   const el = document.getElementById(id);
   if (!el) return;
-  el.className = `flash flash-${type} show`;
+  el.className = `flash f-${type} show`;
   el.innerHTML = msg;
-  if (dur) setTimeout(() => el.className = 'flash', dur);
+  if (dur) setTimeout(() => el.className='flash', dur);
 }
 
 function timeAgo(d) {
   if (!d) return '—';
   const s = Math.floor((Date.now() - new Date(d)) / 1000);
-  if (s < 60) return s + 's ago';
-  if (s < 3600) return Math.floor(s/60) + 'm ago';
+  if (s < 60)    return s + 's ago';
+  if (s < 3600)  return Math.floor(s/60) + 'm ago';
   if (s < 86400) return Math.floor(s/3600) + 'h ago';
   return new Date(d).toLocaleDateString();
 }
 
 function fmtUp(s) {
   if (!s) return '—';
-  if (s < 60) return s + 's';
+  if (s < 60)   return s + 's';
   if (s < 3600) return Math.floor(s/60) + 'm';
   return Math.floor(s/3600) + 'h ' + Math.floor((s%3600)/60) + 'm';
 }
 
-function srvIcon(status) {
-  return status === 'online' ? '🟢' : status === 'maintenance' ? '🟡' : '🔴';
+function copyText(t, flashId) {
+  navigator.clipboard?.writeText(t).catch(()=>{});
+  if (flashId) flash(flashId, '📋 Copied: ' + t, 'info');
 }
 
-/*═══════════════════════════════════════════════════════
-  VIEW ROUTING
-═══════════════════════════════════════════════════════*/
-function showView(id) {
-  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
+/* ── SCROLL LISTENER ── */
+window.addEventListener('scroll', () => {
+  document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 20);
+});
+
+/* ── PAGE ROUTING ── */
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('pg-' + name).classList.add('active');
+  // Nav highlights
+  ['home','user','admin'].forEach(n => {
+    const nl = document.getElementById('nl-' + n);
+    const dl = document.getElementById('dl-' + n);
+    if (nl) nl.classList.toggle('active', n === name);
+    if (dl) dl.classList.toggle('active', n === name);
+  });
+  window.scrollTo(0, 0);
+  if (name === 'admin' && !ADMIN_TOKEN) document.getElementById('admin-gate').style.display = 'flex';
 }
 
-function goLanding() { showView('v-land'); if (sse) { sse.close(); sse = null; } }
-function showUserPortal() { ltab('check', document.querySelector('.view-tab:nth-child(2)')); }
-function showAdminLogin() { showView('v-admin'); }
+/* ── BURGER MENU ── */
+function toggleDrawer() {
+  document.getElementById('burger').classList.toggle('open');
+  document.getElementById('drawer').classList.toggle('open');
+}
 
-/*═══════════════════════════════════════════════════════
-  LANDING TABS
-═══════════════════════════════════════════════════════*/
-function ltab(name, el) {
-  document.querySelectorAll('.view-tab').forEach(t => t.classList.remove('on'));
+/* ── HOME TABS ── */
+function htab(name, el) {
+  document.querySelectorAll('.tab-pill').forEach(t => t.classList.remove('on'));
   document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('on'));
-  if (el) el.classList.add('on');
-  document.getElementById('ltp-' + name).classList.add('on');
+  el.classList.add('on');
+  document.getElementById('htp-' + name).classList.add('on');
 }
 
-/*═══════════════════════════════════════════════════════
-  LANDING — STATS & PAIR
-═══════════════════════════════════════════════════════*/
-async function loadLandingStats() {
+function scrollToPair() {
+  showPage('home');
+  setTimeout(() => document.getElementById('pair-section').scrollIntoView({behavior:'smooth'}), 100);
+}
+
+/* ── LANDING STATS ── */
+async function loadStats() {
   try {
     const r = await fetch(BASE + '/api/status');
     const d = await r.json();
-    const set = (id, v) => { const e = document.getElementById(id); if(e) e.textContent = v; };
-    set('ls-users', d.totalUsers || d.instances || '—');
-    set('ls-cmds',  (d.commands || 500) + '+');
-    set('ls-up',    fmtUp(d.uptime));
-  } catch {}
+    const set = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
+    set('hs-users',  d.totalUsers || d.instances || '—');
+    set('hs-cmds',   (d.commands || 500) + '+');
+    set('hs-up',     fmtUp(d.uptime));
+    set('hs-online', '—');
+    document.getElementById('nav-stat-txt').textContent = 'Online';
+  } catch { document.getElementById('nav-stat-txt').textContent = 'Offline'; }
 }
 
+/* ── PAIR ── */
 async function doPair() {
   const num = document.getElementById('pair-phone').value.replace(/\D/g,'');
-  if (num.length < 7) { flash('pf','❌ Enter phone with country code (e.g. 923001234567)','err'); return; }
-  flash('pf','<span class="spin"></span>Generating code…','info', 0);
-  document.getElementById('code-reveal').classList.remove('show');
-  document.getElementById('deploy-pill').classList.remove('show');
+  if (num.length < 7) { flash('pair-flash', '❌ Enter phone with country code (e.g. 923001234567)', 'err'); return; }
+  flash('pair-flash', '<span class="spin"></span> Generating code…', 'info', 0);
+  document.getElementById('code-box').classList.remove('show');
+  document.getElementById('deploy-reveal').classList.remove('show');
   try {
-    const r = await fetch(BASE + '/api/pair', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ number: num }) });
+    const r = await fetch(BASE + '/api/pair', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({number:num})});
     const d = await r.json();
-    if (!d.success) { flash('pf','❌ ' + (d.error||'Failed. Try again.'),'err'); return; }
-    flash('pf','✅ Code generated! Enter it in WhatsApp within 60 seconds.','ok');
-    const code = (d.pairingCode||'--------').replace(/-/g,'');
-    document.getElementById('code-val').textContent = code.match(/.{1,4}/g)?.join('-') || code;
-    document.getElementById('code-reveal').classList.add('show');
+    if (!d.success) { flash('pair-flash', '❌ ' + (d.error||'Failed. Try again.'), 'err'); return; }
+    flash('pair-flash', '✅ Code ready! Enter it in WhatsApp → Linked Devices within 60s.', 'ok');
+    const code = (d.pairingCode||'').replace(/-/g,'');
+    document.getElementById('code-digits').textContent = code.match(/.{1,4}/g)?.join('-') || code || '— — — —';
+    document.getElementById('code-box').classList.add('show');
     if (d.deployId) {
-      document.getElementById('deploy-id-val').textContent = d.deployId;
-      document.getElementById('deploy-pill').classList.add('show');
+      document.getElementById('deploy-val').textContent = d.deployId;
+      document.getElementById('deploy-reveal').classList.add('show');
     }
-  } catch { flash('pf','❌ Connection failed. Is the bot running?','err'); }
+  } catch { flash('pair-flash', '❌ Connection failed. Is the bot deployed?', 'err'); }
 }
 
-async function quickLookup() {
-  const id = document.getElementById('quick-id').value.trim().toUpperCase();
-  if (!id.startsWith('REDX')) { flash('qlf','❌ Enter a valid Deploy ID (starts with REDX)','err'); return; }
+async function doCheckId() {
+  const id = document.getElementById('check-id').value.trim().toUpperCase();
+  if (!id.startsWith('REDX') || id.length < 8) { flash('check-flash', '❌ Enter a valid Deploy ID (starts with REDX)', 'err'); return; }
+  flash('check-flash', '<span class="spin"></span> Looking up…', 'info', 0);
   try {
     const r = await fetch(BASE + '/api/lookup/' + id);
     const d = await r.json();
-    if (!d.success) { flash('qlf','❌ ID not found','err'); return; }
-    const icon = d.status === 'online' ? '🟢' : '🔴';
-    flash('qlf', `${icon} <strong>${d.status?.toUpperCase()}</strong> &nbsp;|&nbsp; +${d.phone} &nbsp;|&nbsp; Registered ${timeAgo(d.createdAt)}`, d.status==='online'?'ok':'info');
-  } catch { flash('qlf','❌ Connection failed','err'); }
+    if (!d.success) { flash('check-flash', '❌ ID not found', 'err'); return; }
+    const ic = d.status === 'online' ? '🟢' : '🔴';
+    flash('check-flash', `${ic} <strong>${d.status?.toUpperCase()}</strong> &nbsp;·&nbsp; +${d.phone} &nbsp;·&nbsp; ${timeAgo(d.createdAt)}`, d.status==='online'?'ok':'info');
+  } catch { flash('check-flash', '❌ Connection failed', 'err'); }
 }
 
-/*═══════════════════════════════════════════════════════
-  USER PORTAL
-═══════════════════════════════════════════════════════*/
+function goUserPortal() {
+  const id = document.getElementById('check-id').value.trim().toUpperCase();
+  if (id.startsWith('REDX')) document.getElementById('uid-input').value = id;
+  showPage('user');
+}
+
+/* ── USER PORTAL ── */
 async function doUserAccess() {
   const id = document.getElementById('uid-input').value.trim().toUpperCase();
-  if (!id.startsWith('REDX') || id.length < 8) { flash('uid-flash','❌ Enter a valid Deploy ID (REDX…)','err'); return; }
-  flash('uid-flash','<span class="spin"></span>Looking up…','info',0);
+  if (!id.startsWith('REDX') || id.length < 8) { flash('uid-flash', '❌ Enter a valid Deploy ID', 'err'); return; }
+  flash('uid-flash', '<span class="spin"></span> Verifying…', 'info', 0);
   try {
-    const r = await fetch(BASE + '/api/user/me', { headers: dah(id) });
+    const r = await fetch(BASE + '/api/user/me', {headers: dah(id)});
     const d = await r.json();
-    if (!d.success) { flash('uid-flash','❌ ' + (d.error||'Not found'),'err'); return; }
-    USER_DEPLOY_ID = id;
-    // Fill portal
+    if (!d.success) { flash('uid-flash', '❌ ' + (d.error||'Not found'), 'err'); return; }
+    USER_ID = id;
     const u = d.user;
-    document.getElementById('utb-name').textContent = id;
-    document.getElementById('utb-av').textContent   = id[4]||'U';
-    document.getElementById('u-phone').textContent  = '+' + (u.phone||'—');
-    document.getElementById('u-deploy').textContent = id;
-    document.getElementById('u-date').textContent   = u.createdAt ? new Date(u.createdAt).toLocaleDateString() : '—';
-    document.getElementById('u-seen').textContent   = timeAgo(u.lastSeen);
-    const b = document.getElementById('u-status-badge');
-    b.className = 'badge ' + (d.botStatus==='online'?'b-online':'b-offline');
-    b.textContent = d.botStatus||'unknown';
-    // Fill servers
+    const set = (i, v) => { const e = document.getElementById(i); if(e) e.textContent = v; };
+    set('u-phone',    '+' + (u.phone||'—'));
+    set('u-deployid', id);
+    set('u-date',     u.createdAt ? new Date(u.createdAt).toLocaleDateString() : '—');
+    set('u-seen',     timeAgo(u.lastSeen));
+    set('u-status',   d.botStatus || '—');
+    const b = document.getElementById('u-badge');
+    b.className = 'badge ' + (d.botStatus==='online' ? 'b-on' : 'b-off');
+    b.textContent = d.botStatus || 'unknown';
     renderUserServers(d.servers||[]);
-    // Fill announcements
-    renderUserAnn(d.announcements||[]);
-    showView('v-user');
+    renderAnns('u-ann-list', d.announcements||[]);
+    document.getElementById('user-gate').style.display = 'none';
+    document.getElementById('user-shell').style.display = 'grid';
     initSSE();
-  } catch { flash('uid-flash','❌ Connection failed','err'); }
+  } catch { flash('uid-flash', '❌ Connection failed', 'err'); }
 }
 
 function upage(name, el, label) {
-  document.querySelectorAll('.unav-btn').forEach(b => b.classList.remove('on'));
+  document.querySelectorAll('.pnav-btn').forEach(b => b.classList.remove('on'));
   document.querySelectorAll('.upg').forEach(p => p.classList.remove('on'));
   if (el) el.classList.add('on');
-  document.getElementById('upg-' + name).classList.add('on');
-  document.getElementById('utb-pg').textContent = label||name;
+  document.getElementById('upg-'+name).classList.add('on');
   if (name === 'servers') loadUserServers();
-  if (name === 'announcements') loadUserAnn();
+  if (name === 'anns')    loadUserAnns();
 }
 
 async function uRefresh() {
-  flash('usf','<span class="spin"></span>Refreshing…','info',0);
+  flash('u-flash', '<span class="spin"></span> Refreshing…', 'info', 0);
   try {
-    const r = await fetch(BASE+'/api/user/me',{headers:dah(USER_DEPLOY_ID)});
+    const r = await fetch(BASE+'/api/user/me', {headers: dah(USER_ID)});
     const d = await r.json();
-    if (!d.success) { flash('usf','❌ '+d.error,'err'); return; }
+    if (!d.success) { flash('u-flash','❌ '+d.error,'err'); return; }
     document.getElementById('u-seen').textContent = timeAgo(d.user?.lastSeen);
-    const b = document.getElementById('u-status-badge');
-    b.className = 'badge ' + (d.botStatus==='online'?'b-online':'b-offline');
+    const b = document.getElementById('u-badge');
+    b.className = 'badge ' + (d.botStatus==='online'?'b-on':'b-off');
     b.textContent = d.botStatus;
-    renderUserServers(d.servers||[]);
-    flash('usf','✅ Refreshed','ok');
-  } catch { flash('usf','❌ Connection failed','err'); }
+    flash('u-flash', '✅ Refreshed', 'ok');
+  } catch { flash('u-flash','❌ Failed','err'); }
 }
 
 async function loadUserServers() {
-  const el = document.getElementById('server-grid-user');
-  el.innerHTML = '<div style="color:var(--t2);padding:20px;grid-column:1/-1;text-align:center"><span class="spin"></span> Loading…</div>';
   try {
-    const r = await fetch(BASE+'/api/user/me',{headers:dah(USER_DEPLOY_ID)});
+    const r = await fetch(BASE+'/api/user/me', {headers: dah(USER_ID)});
     const d = await r.json();
     renderUserServers(d.servers||[]);
-  } catch { el.innerHTML = '<div style="color:var(--red);padding:20px">Failed to load</div>'; }
+  } catch {}
 }
 
 function renderUserServers(servers) {
-  const el = document.getElementById('server-grid-user');
-  if (!servers.length) { el.innerHTML = '<div style="color:var(--t2);padding:20px;grid-column:1/-1;text-align:center">No servers available yet. Check back later.</div>'; return; }
+  const el = document.getElementById('user-srv-grid');
+  if (!el) return;
+  if (!servers.length) { el.innerHTML = '<div style="color:var(--t2);padding:20px;text-align:center;grid-column:1/-1">No servers available yet.</div>'; return; }
+  const icons = {online:'🟢',maintenance:'🟡',offline:'🔴'};
   el.innerHTML = servers.map(s => `
-    <div class="srv-card" onclick="window.open('${s.url||'#'}','_blank')">
+    <div class="srv-card" onclick="${s.url ? `window.open('${s.url}','_blank')` : ''}">
       <div class="srv-card-top">
-        <div class="srv-icon">${srvIcon(s.status)} 🖥️</div>
-        <span class="badge ${s.status==='online'?'b-online':s.status==='maintenance'?'b-pending':'b-offline'}">${s.status}</span>
+        <div class="srv-icon-wrap">${icons[s.status]||'⚪'} 🖥️</div>
+        <span class="badge ${s.status==='online'?'b-on':s.status==='maintenance'?'b-pend':'b-off'}">${s.status}</span>
       </div>
       <div class="srv-name">${s.name}</div>
       <div class="srv-region">📍 ${s.region||'Global'}</div>
       ${s.url ? `<div class="srv-url">${s.url}</div>` : ''}
-      ${s.notes ? `<div style="font-size:.75rem;color:var(--t2);margin-top:8px">💬 ${s.notes}</div>` : ''}
+      ${s.notes ? `<div class="srv-notes">💬 ${s.notes}</div>` : ''}
       <div class="srv-footer">
         <span>Added ${timeAgo(s.addedAt)}</span>
-        ${s.url ? '<span style="color:var(--fire)">Click to open →</span>' : ''}
+        ${s.url ? '<span style="color:var(--neon)">Open →</span>' : ''}
       </div>
     </div>
   `).join('');
 }
 
-async function loadUserAnn() {
-  const el = document.getElementById('u-ann-list');
+async function loadUserAnns() {
   try {
     const r = await fetch(BASE+'/api/announcements');
     const d = await r.json();
-    renderUserAnn(d.list||[]);
-  } catch { el.innerHTML = '<div style="color:var(--red);padding:20px">Failed</div>'; }
+    renderAnns('u-ann-list', (d.list||[]).filter(a => a.visibility !== 'admins'));
+  } catch {}
 }
 
-function renderUserAnn(list) {
+function renderAnns(elId, list) {
+  const el = document.getElementById(elId);
+  if (!el) return;
   const icons = {success:'✅',warning:'⚠️',danger:'🚨',info:'ℹ️'};
-  const el = document.getElementById('u-ann-list');
-  const el2 = document.getElementById('user-ann-list-alt');
-  const html = list.length ? list.map(a=>`
+  el.innerHTML = list.length ? list.map(a => `
     <div class="ann-card">
-      <div class="ann-type-row"><span style="font-size:1rem">${icons[a.type]||'📢'}</span><div class="ann-title">${a.title||'Announcement'}</div><span style="margin-left:auto;font-size:.68rem;color:var(--t3);font-family:var(--mono)">${timeAgo(a.at||a.createdAt)}</span></div>
-      <div class="ann-body">${a.body||a.text||''}</div>
+      <div class="ann-header">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+          <span>${icons[a.type]||'📢'}</span>
+          <div class="ann-title-text">${a.title||'Announcement'}</div>
+        </div>
+        <span class="ann-time">${timeAgo(a.at||a.createdAt)}</span>
+      </div>
+      <div class="ann-body-text">${a.body||a.text||''}</div>
     </div>
-  `).join('') : '<div style="color:var(--t2);padding:8px">No announcements yet.</div>';
-  if (el) el.innerHTML = html;
-  if (el2) el2.innerHTML = html;
+  `).join('') : '<div style="color:var(--t2);padding:8px;font-family:var(--ff-sub)">No announcements yet.</div>';
 }
 
-/*═══════════════════════════════════════════════════════
-  SSE — Live updates
-═══════════════════════════════════════════════════════*/
+/* ── SSE ── */
 function initSSE() {
   if (sse) sse.close();
   try {
     sse = new EventSource(BASE + '/api/events');
-    sse.onopen = () => { document.getElementById('sb-dot')?.style && (document.getElementById('sb-dot').style.background = 'var(--green)'); };
+    sse.onopen = () => {
+      document.getElementById('sb-dot')?.style && (document.getElementById('sb-dot').style.background = 'var(--green)');
+      document.getElementById('nav-stat-txt').textContent = 'Live';
+    };
     sse.onmessage = e => { try { handleSSE(JSON.parse(e.data)); } catch {} };
     sse.addEventListener('stats', e => { try { applyStats(JSON.parse(e.data)); } catch {} });
-    sse.onerror = () => { document.getElementById('atb-live') && (document.getElementById('atb-live').textContent = 'Reconnecting…'); };
+    sse.onerror = () => { document.getElementById('nav-stat-txt').textContent = 'Reconnecting'; };
   } catch {}
 }
 
 function handleSSE(ev) {
-  const colors = { connect:'g', disconnect:'r', command:'b', pair:'b', server_added:'g', server_removed:'r', user_joined:'g', announcement:'a' };
-  const c = colors[ev.type] || 'b';
-  addFeed(ev.message || ev.type, c, ev.time || new Date().toISOString());
-  // If server list changed, refresh user portal servers
+  const cm = {connect:'fd-g',disconnect:'fd-r',command:'fd-b',pair:'fd-b',server_added:'fd-g',server_removed:'fd-r',user_joined:'fd-g',announcement:'fd-a'};
+  addFeed(ev.message || ev.type, cm[ev.type]||'fd-b', ev.time||new Date().toISOString());
   if (['server_added','server_removed','server_updated'].includes(ev.type)) {
-    if (USER_DEPLOY_ID && document.getElementById('upg-servers').classList.contains('on')) loadUserServers();
+    if (USER_ID) loadUserServers();
+    loadAdminServers();
   }
-  if (ev.type === 'announcement' && USER_DEPLOY_ID) loadUserAnn();
+  if (ev.type === 'announcement') { if (USER_ID) loadUserAnns(); loadAnn(); }
   if (ev.type === 'stats') applyStats(ev);
 }
 
-function addFeed(msg, c='b', time) {
-  const el = document.getElementById('a-live-feed');
+function addFeed(msg, cls='fd-b', time) {
+  const el = document.getElementById('a-feed');
   if (!el) return;
   const t = time ? new Date(time).toLocaleTimeString() : new Date().toLocaleTimeString();
-  const div = document.createElement('div');
-  div.className = 'feed-row';
-  div.innerHTML = `<div class="feed-dot ${c}"></div><div class="feed-body">${msg}<div class="feed-time">${t}</div></div>`;
-  el.prepend(div);
+  const d = document.createElement('div');
+  d.className = 'feed-row';
+  d.innerHTML = `<div class="feed-dot ${cls}"></div><div class="feed-body">${msg}<div class="feed-time">${t}</div></div>`;
+  el.prepend(d);
   while (el.children.length > 60) el.removeChild(el.lastChild);
 }
 
 function applyStats(d) {
-  const set = (id, v) => { const e = document.getElementById(id); if(e) e.textContent = v; };
-  set('ad-users',   d.totalUsers || 0);
-  set('ad-online',  d.onlineNow  || 0);
-  set('ad-servers', d.instances  || rjson(null, 'servers') || '—');
-  set('ad-plugins', d.plugins    || '—');
-  set('ad-up',      fmtUp(d.uptime));
-  set('nb-users',   d.totalUsers || 0);
-  set('ls-users',   d.totalUsers || 0);
-  set('ls-up',      fmtUp(d.uptime));
+  const set = (id,v) => { const e=document.getElementById(id); if(e) e.textContent=v; };
+  set('ad-users',  d.totalUsers ||0);
+  set('ad-online', d.onlineNow  ||0);
+  set('ad-plugins',d.plugins    ||'—');
+  set('ad-up',     fmtUp(d.uptime));
+  set('nb-users',  d.totalUsers ||0);
+  set('hs-users',  d.totalUsers ||0);
+  set('hs-online', d.onlineNow  ||0);
+  set('hs-up',     fmtUp(d.uptime));
 }
 
-/*═══════════════════════════════════════════════════════
-  ADMIN — LOGIN
-═══════════════════════════════════════════════════════*/
+/* ── ADMIN LOGIN ── */
 async function doAdminLogin() {
   const u = document.getElementById('alu').value.trim();
   const p = document.getElementById('alp').value;
-  if (!u || !p) return;
-  flash('alf','<span class="spin"></span>Logging in…','info',0);
+  flash('al-flash','<span class="spin"></span> Logging in…','info',0);
   try {
     const r = await fetch(BASE+'/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p})});
     const d = await r.json();
-    if (!d.success) { flash('alf','❌ '+(d.error||'Invalid credentials'),'err'); return; }
+    if (!d.success) { flash('al-flash','❌ '+(d.error||'Invalid credentials'),'err'); return; }
     ADMIN_TOKEN = d.token;
-    document.getElementById('admin-login-overlay').style.display = 'none';
+    document.getElementById('admin-gate').style.display = 'none';
     document.getElementById('admin-shell').style.display = 'grid';
-    document.getElementById('atb-uname').textContent = u;
     aDash(); initSSE();
-  } catch { flash('alf','❌ Connection failed','err'); }
+  } catch { flash('al-flash','❌ Connection failed','err'); }
 }
 
-function adminLogout() { ADMIN_TOKEN = ''; if(sse){sse.close();sse=null;} goLanding(); }
+function adminLogout() { ADMIN_TOKEN=''; if(sse){sse.close();sse=null;} showPage('home'); }
 
-/*═══════════════════════════════════════════════════════
-  ADMIN — NAVIGATION
-═══════════════════════════════════════════════════════*/
+/* ── ADMIN NAV ── */
 function apage(name, el, label) {
   document.querySelectorAll('.anav-btn').forEach(b => b.classList.remove('on'));
   document.querySelectorAll('.apg').forEach(p => p.classList.remove('on'));
   if (el) el.classList.add('on');
   document.getElementById('apg-'+name).classList.add('on');
-  document.getElementById('atb-pg').textContent = label||name;
-  if (name==='users')    loadAdminUsers();
+  if (name==='users')    loadUsers();
   if (name==='activity') loadActivity();
   if (name==='servers')  loadAdminServers();
   if (name==='plugins')  loadPlugins();
@@ -1102,300 +1381,276 @@ function apage(name, el, label) {
   if (name==='announce') loadAnn();
 }
 
-/*═══════════════════════════════════════════════════════
-  ADMIN — DASHBOARD
-═══════════════════════════════════════════════════════*/
+/* ── DASHBOARD ── */
 async function aDash() {
   try {
     const r = await fetch(BASE+'/api/admin/stats',{headers:ah()});
     const d = await r.json();
     applyStats(d);
-    // also get server count
     const rs = await fetch(BASE+'/api/admin/servers',{headers:ah()});
     const ds = await rs.json();
-    const cnt = (ds.servers||[]).length;
-    document.getElementById('ad-servers').textContent = cnt;
-    document.getElementById('nb-servers').textContent = cnt;
+    const n = (ds.servers||[]).length;
+    document.getElementById('ad-servers').textContent  = n;
+    document.getElementById('nb-servers').textContent  = n;
+    document.getElementById('hs-srv').textContent      = n;
+    document.getElementById('nb-plugins').textContent  = d.plugins||0;
   } catch {}
 }
+setInterval(()=>{ if(ADMIN_TOKEN && document.getElementById('apg-dash').classList.contains('on')) aDash(); }, 15000);
 
-setInterval(() => { if (ADMIN_TOKEN && document.getElementById('apg-dash').classList.contains('on')) aDash(); }, 15000);
-
-/*═══════════════════════════════════════════════════════
-  ADMIN — USERS
-═══════════════════════════════════════════════════════*/
-async function loadAdminUsers() {
+/* ── USERS ── */
+async function loadUsers() {
   document.getElementById('user-tbl').innerHTML = '<div style="padding:20px;text-align:center;color:var(--t2)"><span class="spin"></span></div>';
   try {
     const r = await fetch(BASE+'/api/admin/users',{headers:ah()});
     const d = await r.json();
-    allUsersCache = d.users || [];
-    renderUserTable(allUsersCache);
-    document.getElementById('nb-users').textContent = allUsersCache.length;
-  } catch { document.getElementById('user-tbl').innerHTML = '<div style="color:var(--red);padding:20px">Failed to load</div>'; }
+    allUsers = d.users||[];
+    renderUsers(allUsers);
+    document.getElementById('nb-users').textContent = allUsers.length;
+  } catch {}
 }
 
-function renderUserTable(users) {
-  if (!users.length) { document.getElementById('user-tbl').innerHTML = '<div style="padding:20px;text-align:center;color:var(--t2)">No users yet.</div>'; return; }
-  let html = '<table><thead><tr><th><input type="checkbox" onclick="toggleAll(this)"/></th><th>Phone</th><th>Deploy ID</th><th>Status</th><th>Bot</th><th>Registered</th><th>Actions</th></tr></thead><tbody>';
-  users.forEach(u => {
-    const online = u.isOnline ? '<span class="badge b-online"><span class="b-dot"></span>Online</span>' : '<span class="badge b-offline">Offline</span>';
-    const banned = u.banned   ? '<span class="badge b-banned">Banned</span>' : '<span class="badge b-online">Active</span>';
-    html += `<tr>
-      <td><input type="checkbox" class="urow-cb" value="${u.deployId}"/></td>
+function renderUsers(users) {
+  const el = document.getElementById('user-tbl');
+  if (!users.length) { el.innerHTML='<div style="padding:20px;text-align:center;color:var(--t2)">No users yet.</div>'; return; }
+  el.innerHTML = '<table><thead><tr><th><input type="checkbox" onclick="toggleAll(this)"/></th><th>Phone</th><th>Deploy ID</th><th>Account</th><th>Bot</th><th>Registered</th><th>Actions</th></tr></thead><tbody>' +
+    users.map(u => `<tr>
+      <td><input type="checkbox" class="ucb" value="${u.deployId}"/></td>
       <td>+${u.phone||'—'}</td>
       <td><span class="mono" style="color:var(--amber)">${u.deployId}</span></td>
-      <td>${banned}</td>
-      <td>${online}</td>
-      <td style="color:var(--t2)">${timeAgo(u.createdAt)}</td>
-      <td>
-        <div style="display:flex;gap:5px">
-          <button class="btn btn-${u.banned?'green':'amber'} btn-xs" onclick="toggleBan('${u.deployId}',${u.banned})">${u.banned?'Unban':'Ban'}</button>
-          <button class="btn btn-red btn-xs" onclick="deleteUser('${u.deployId}')">🗑️</button>
-        </div>
-      </td>
-    </tr>`;
-  });
-  html += '</tbody></table>';
-  document.getElementById('user-tbl').innerHTML = html;
+      <td><span class="badge ${u.banned?'b-ban':'b-on'}">${u.banned?'Banned':'Active'}</span></td>
+      <td><span class="badge ${u.isOnline?'b-on':'b-off'}">${u.isOnline?'Online':'Offline'}</span></td>
+      <td style="color:var(--t2);font-family:var(--ff-sub)">${timeAgo(u.createdAt)}</td>
+      <td><div style="display:flex;gap:5px">
+        <button class="btn ${u.banned?'btn-green':'btn-amber'} btn-xs" onclick="toggleBan('${u.deployId}',${u.banned})">${u.banned?'Unban':'Ban'}</button>
+        <button class="btn btn-red btn-xs" onclick="deleteUser('${u.deployId}')">🗑️</button>
+      </div></td>
+    </tr>`).join('') + '</tbody></table>';
 }
 
 function filterUsers() {
   const q = document.getElementById('user-search').value.toLowerCase();
-  renderUserTable(q ? allUsersCache.filter(u => u.phone?.includes(q) || u.deployId?.toLowerCase().includes(q)) : allUsersCache);
+  renderUsers(q ? allUsers.filter(u => u.phone?.includes(q) || u.deployId?.toLowerCase().includes(q)) : allUsers);
 }
 
-function toggleAll(cb) { document.querySelectorAll('.urow-cb').forEach(c => c.checked = cb.checked); }
+function toggleAll(cb) { document.querySelectorAll('.ucb').forEach(c => c.checked = cb.checked); }
 
 async function toggleBan(id, wasBanned) {
   await fetch(BASE+'/api/admin/users/'+id,{method:'PATCH',headers:ah(),body:JSON.stringify({banned:!wasBanned})});
-  loadAdminUsers();
+  loadUsers();
 }
 
 async function deleteUser(id) {
   if (!confirm('Delete user: '+id+'?')) return;
   await fetch(BASE+'/api/admin/users/'+id,{method:'DELETE',headers:ah()});
-  flash('auf','✅ User deleted','ok');
-  loadAdminUsers(); aDash();
+  flash('uf','✅ User deleted','ok'); loadUsers(); aDash();
 }
 
-async function bulkAction(action) {
-  const ids = [...document.querySelectorAll('.urow-cb:checked')].map(c => c.value);
-  if (!ids.length) { flash('auf','❌ Select users first','warn'); return; }
-  if (action === 'delete' && !confirm('Delete ' + ids.length + ' users?')) return;
-  const r = await fetch(BASE+'/api/admin/users/bulk',{method:'POST',headers:ah(),body:JSON.stringify({ids,action})});
-  const d = await r.json();
-  flash('auf',`✅ ${action} applied to ${d.affected} users`,'ok');
-  loadAdminUsers(); aDash();
+async function bulkBan() {
+  const ids = [...document.querySelectorAll('.ucb:checked')].map(c=>c.value);
+  if (!ids.length) { flash('uf','❌ Select users first','warn'); return; }
+  await fetch(BASE+'/api/admin/users/bulk',{method:'POST',headers:ah(),body:JSON.stringify({ids,action:'ban'})});
+  flash('uf','✅ Banned '+ids.length+' users','ok'); loadUsers();
 }
 
-/*═══════════════════════════════════════════════════════
-  ADMIN — ACTIVITY
-═══════════════════════════════════════════════════════*/
+async function bulkDelete() {
+  const ids = [...document.querySelectorAll('.ucb:checked')].map(c=>c.value);
+  if (!ids.length) { flash('uf','❌ Select users first','warn'); return; }
+  if (!confirm('Delete '+ids.length+' users?')) return;
+  await fetch(BASE+'/api/admin/users/bulk',{method:'POST',headers:ah(),body:JSON.stringify({ids,action:'delete'})});
+  flash('uf','✅ Deleted '+ids.length+' users','ok'); loadUsers(); aDash();
+}
+
+/* ── ACTIVITY ── */
 async function loadActivity() {
-  const el = document.getElementById('a-activity-list');
   try {
     const r = await fetch(BASE+'/api/admin/activity',{headers:ah()});
     const d = await r.json();
     const ev = d.events||[];
-    const colors = {connect:'var(--green)',disconnect:'var(--red)',command:'var(--blue)',pair:'var(--amber)'};
-    el.innerHTML = ev.length ? ev.map(e=>`
-      <div style="display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--b1);font-size:.8rem">
-        <div style="width:8px;height:8px;border-radius:50%;background:${colors[e.type]||'var(--blue)'};flex-shrink:0;margin-top:6px"></div>
-        <div style="flex:1">
-          <div>${e.message||e.type}</div>
-          <div style="font-size:.68rem;color:var(--t3);font-family:var(--mono);margin-top:2px">${new Date(e.time||e.at).toLocaleString()}</div>
-        </div>
+    const colors = {connect:'var(--green)',disconnect:'var(--red)',command:'var(--neon)',pair:'var(--amber)'};
+    document.getElementById('act-list').innerHTML = ev.length ? ev.map(e => `
+      <div style="display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--b1);font-family:var(--ff-sub);font-size:.8rem">
+        <div style="width:8px;height:8px;border-radius:50%;background:${colors[e.type]||'var(--neon)'};flex-shrink:0;margin-top:6px"></div>
+        <div style="flex:1"><div>${e.message||e.type}</div><div style="font-size:.67rem;color:var(--t3);font-family:var(--ff-mono);margin-top:2px">${new Date(e.time||e.at).toLocaleString()}</div></div>
       </div>
-    `).join('') : '<div style="color:var(--t2);padding:20px;text-align:center">No activity yet.</div>';
-  } catch { el.innerHTML = '<div style="color:var(--red);padding:16px">Failed</div>'; }
+    `).join('') : '<div style="color:var(--t2);padding:20px;text-align:center;font-family:var(--ff-sub)">No activity yet.</div>';
+  } catch {}
 }
 
-/*═══════════════════════════════════════════════════════
-  ADMIN — SERVERS
-═══════════════════════════════════════════════════════*/
+/* ── SERVERS ── */
 async function loadAdminServers() {
-  const el = document.getElementById('a-server-list');
   try {
     const r = await fetch(BASE+'/api/admin/servers',{headers:ah()});
     const d = await r.json();
-    const servers = d.servers||[];
-    document.getElementById('nb-servers').textContent = servers.length;
-    document.getElementById('ad-servers').textContent = servers.length;
-    if (!servers.length) { el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--t2)">No servers added yet.</div>'; return; }
-    el.innerHTML = '<div class="tbl-wrap"><table><thead><tr><th>Name</th><th>Region</th><th>URL</th><th>Status</th><th>Added</th><th>Actions</th></tr></thead><tbody>' +
-      servers.map(s=>`<tr>
-        <td><strong>${s.name}</strong>${s.notes?`<div style="font-size:.7rem;color:var(--t2)">${s.notes}</div>`:''}</td>
-        <td style="color:var(--t2)">${s.region||'—'}</td>
-        <td><a href="${s.url}" target="_blank" style="color:var(--fire);font-family:var(--mono);font-size:.72rem;word-break:break-all">${s.url||'—'}</a></td>
-        <td><span class="badge ${s.status==='online'?'b-online':s.status==='maintenance'?'b-pending':'b-offline'}">${srvIcon(s.status)} ${s.status}</span></td>
-        <td style="color:var(--t2)">${timeAgo(s.addedAt)}</td>
-        <td>
-          <div style="display:flex;gap:5px;flex-wrap:wrap">
-            <button class="btn btn-amber btn-xs" onclick="toggleSrvStatus('${s.id}','${s.status}')">${s.status==='online'?'Pause':'Activate'}</button>
-            <button class="btn btn-red btn-xs" onclick="deleteServer('${s.id}','${s.name}')">🗑️</button>
-          </div>
-        </td>
-      </tr>`).join('') +
-    '</tbody></table></div>';
-  } catch { el.innerHTML = '<div style="color:var(--red);padding:16px">Failed</div>'; }
+    const srvs = d.servers||[];
+    const set = (id,v) => { const e=document.getElementById(id); if(e) e.textContent=v; };
+    set('nb-servers',srvs.length); set('ad-servers',srvs.length); set('hs-srv',srvs.length);
+    const icons = {online:'🟢',maintenance:'🟡',offline:'🔴'};
+    document.getElementById('a-srv-list').innerHTML = srvs.length
+      ? '<div class="tbl-wrap"><table><thead><tr><th>Name</th><th>Region</th><th>URL</th><th>Status</th><th>Added</th><th>Actions</th></tr></thead><tbody>' +
+        srvs.map(s=>`<tr>
+          <td><strong style="font-family:var(--ff-head);font-size:.78rem">${s.name}</strong>${s.notes?`<div style="font-size:.68rem;color:var(--t2);font-family:var(--ff-sub)">${s.notes}</div>`:''}</td>
+          <td style="color:var(--t2);font-family:var(--ff-sub)">${s.region||'—'}</td>
+          <td><a href="${s.url}" target="_blank" style="color:var(--neon);font-family:var(--ff-mono);font-size:.68rem;word-break:break-all">${s.url||'—'}</a></td>
+          <td><span class="badge ${s.status==='online'?'b-on':s.status==='maintenance'?'b-pend':'b-off'}">${icons[s.status]||'⚪'} ${s.status}</span></td>
+          <td style="color:var(--t2);font-family:var(--ff-sub)">${timeAgo(s.addedAt)}</td>
+          <td><div style="display:flex;gap:5px;flex-wrap:wrap">
+            <button class="btn btn-amber btn-xs" onclick="toggleSrv('${s.id}','${s.status}')">${s.status==='online'?'Pause':'Activate'}</button>
+            <button class="btn btn-red btn-xs" onclick="deleteSrv('${s.id}','${s.name}')">🗑️</button>
+          </div></td>
+        </tr>`).join('') + '</tbody></table></div>'
+      : '<div style="padding:20px;text-align:center;color:var(--t2);font-family:var(--ff-sub)">No servers added yet.</div>';
+  } catch {}
 }
 
 async function addServer() {
-  const name   = document.getElementById('srv-name').value.trim();
-  const region = document.getElementById('srv-region').value;
-  const url    = document.getElementById('srv-url').value.trim();
-  const status = document.getElementById('srv-status').value;
-  const notes  = document.getElementById('srv-notes').value.trim();
-  if (!name) { flash('asf','❌ Server name required','err'); return; }
+  const name = document.getElementById('srv-name').value.trim();
+  if (!name) { flash('sf','❌ Server name required','err'); return; }
   try {
-    const r = await fetch(BASE+'/api/admin/servers',{method:'POST',headers:ah(),body:JSON.stringify({name,region,url,status,notes})});
+    const r = await fetch(BASE+'/api/admin/servers',{method:'POST',headers:ah(),body:JSON.stringify({
+      name, region:document.getElementById('srv-region').value,
+      url:document.getElementById('srv-url').value.trim(),
+      status:document.getElementById('srv-status').value,
+      notes:document.getElementById('srv-notes').value.trim(),
+    })});
     const d = await r.json();
     if (d.success) {
-      flash('asf','✅ Server added! Users can now see it in their portal.','ok');
-      ['srv-name','srv-url','srv-notes'].forEach(id => document.getElementById(id).value = '');
+      flash('sf','✅ Server added! Users see it instantly.','ok');
+      ['srv-name','srv-url','srv-notes'].forEach(id => document.getElementById(id).value='');
       loadAdminServers();
-    } else flash('asf','❌ '+(d.error||'Failed'),'err');
-  } catch { flash('asf','❌ Request failed','err'); }
+    } else flash('sf','❌ '+(d.error||'Failed'),'err');
+  } catch { flash('sf','❌ Request failed','err'); }
 }
 
-async function toggleSrvStatus(id, current) {
-  const next = current === 'online' ? 'maintenance' : 'online';
+async function toggleSrv(id, cur) {
+  const next = cur==='online' ? 'maintenance' : 'online';
   await fetch(BASE+'/api/admin/servers/'+id,{method:'PATCH',headers:ah(),body:JSON.stringify({status:next})});
   loadAdminServers();
 }
 
-async function deleteServer(id, name) {
-  if (!confirm('Remove server: ' + name + '?')) return;
+async function deleteSrv(id, name) {
+  if (!confirm('Remove server: '+name+'?')) return;
   await fetch(BASE+'/api/admin/servers/'+id,{method:'DELETE',headers:ah()});
-  flash('asf','✅ Server removed','ok');
-  loadAdminServers();
+  flash('sf','✅ Server removed','ok'); loadAdminServers();
 }
 
-/*═══════════════════════════════════════════════════════
-  ADMIN — PLUGINS
-═══════════════════════════════════════════════════════*/
+/* ── PLUGINS ── */
 async function loadPlugins() {
-  document.getElementById('a-plugin-list').innerHTML = '<div style="padding:20px;text-align:center;color:var(--t2)"><span class="spin"></span></div>';
   try {
     const r = await fetch(BASE+'/api/admin/plugins',{headers:ah()});
     const d = await r.json();
     const pl = d.plugins||[];
     document.getElementById('nb-plugins').textContent = pl.length;
     document.getElementById('ad-plugins').textContent = pl.length;
-    document.getElementById('a-plugin-list').innerHTML = pl.length ? pl.map(p=>`
+    document.getElementById('plug-list').innerHTML = pl.length ? pl.map(p=>`
       <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--b1)">
         <div style="width:34px;height:34px;border-radius:9px;background:rgba(255,77,28,.1);border:1px solid rgba(255,77,28,.15);display:flex;align-items:center;justify-content:center;font-size:.9rem;flex-shrink:0">🧩</div>
-        <div style="flex:1"><div style="font-weight:600;font-size:.85rem">${p.name}</div><div style="font-size:.7rem;color:var(--t2);font-family:var(--mono)">${(p.size/1024).toFixed(1)} KB</div></div>
+        <div style="flex:1"><div style="font-family:var(--ff-head);font-size:.76rem;font-weight:600">${p.name}</div><div style="font-size:.68rem;color:var(--t2);font-family:var(--ff-mono)">${(p.size/1024).toFixed(1)} KB</div></div>
         <div style="display:flex;gap:7px">
           <button class="btn btn-ghost btn-sm" onclick="editPlugin('${p.name}')">✏️</button>
           <button class="btn btn-red btn-sm" onclick="delPlugin('${p.name}')">🗑️</button>
         </div>
       </div>
-    `).join('') : '<div style="padding:20px;text-align:center;color:var(--t2)">No plugins installed.</div>';
+    `).join('') : '<div style="padding:20px;text-align:center;color:var(--t2);font-family:var(--ff-sub)">No plugins installed.</div>';
   } catch {}
 }
 
-function pluginDrop(e) { e.preventDefault(); const f=e.dataTransfer.files[0]; if(f) uploadPlugin(f); }
+function pluginDrop(e) { e.preventDefault(); this?.classList?.remove('over'); const f=e.dataTransfer.files[0]; if(f) uploadPlugin(f); }
 
 async function uploadPlugin(file) {
-  if (!file?.name.endsWith('.js')) { flash('apf','❌ Only .js files allowed','err'); return; }
-  const fd = new FormData(); fd.append('plugin', file);
-  flash('apf','<span class="spin"></span>Uploading…','info',0);
+  if (!file?.name.endsWith('.js')) { flash('pf','❌ Only .js files allowed','err'); return; }
+  const fd = new FormData(); fd.append('plugin',file);
+  flash('pf','<span class="spin"></span> Uploading…','info',0);
   try {
     const r = await fetch(BASE+'/api/admin/plugins/upload',{method:'POST',headers:{'x-admin-auth':ADMIN_TOKEN},body:fd});
     const d = await r.json();
-    if (d.success) { flash('apf','✅ '+d.message,'ok'); loadPlugins(); aDash(); }
-    else flash('apf','❌ '+(d.error||'Failed'),'err');
-  } catch { flash('apf','❌ Upload failed','err'); }
+    if (d.success) { flash('pf','✅ '+d.message,'ok'); loadPlugins(); aDash(); }
+    else flash('pf','❌ '+(d.error||'Upload failed'),'err');
+  } catch { flash('pf','❌ Upload failed','err'); }
 }
 
 async function installPlugin() {
   const url = document.getElementById('pf-url').value.trim();
-  if (!url.endsWith('.js')) { flash('apf','❌ Must be a .js URL','err'); return; }
-  flash('apf','<span class="spin"></span>Downloading…','info',0);
+  if (!url.endsWith('.js')) { flash('pf','❌ Must be a .js URL','err'); return; }
+  flash('pf','<span class="spin"></span> Downloading…','info',0);
   try {
     const r = await fetch(BASE+'/api/admin/plugins/install',{method:'POST',headers:ah(),body:JSON.stringify({url})});
     const d = await r.json();
-    if (d.success) { flash('apf','✅ '+d.message,'ok'); document.getElementById('pf-url').value=''; loadPlugins(); }
-    else flash('apf','❌ '+(d.error||'Failed'),'err');
-  } catch { flash('apf','❌ Failed','err'); }
+    if (d.success) { flash('pf','✅ '+d.message,'ok'); document.getElementById('pf-url').value=''; loadPlugins(); }
+    else flash('pf','❌ '+(d.error||'Failed'),'err');
+  } catch { flash('pf','❌ Failed','err'); }
 }
 
 async function editPlugin(name) {
   try {
     const r = await fetch(BASE+'/api/admin/plugins/'+name,{headers:ah()});
     const d = await r.json();
-    editingPlugin = name;
-    document.getElementById('plug-edit-name').textContent = name;
-    document.getElementById('plug-editor-area').value = d.content||'';
-    document.getElementById('plug-editor-wrap').classList.add('open');
-    document.getElementById('plug-editor-wrap').scrollIntoView({behavior:'smooth'});
-  } catch { flash('apf','❌ Load failed','err'); }
+    editingPlug = name;
+    document.getElementById('plug-fname').textContent = name;
+    document.getElementById('plug-area').value = d.content||'';
+    document.getElementById('plug-editor').classList.add('open');
+    document.getElementById('plug-editor').scrollIntoView({behavior:'smooth'});
+  } catch { flash('pf','❌ Load failed','err'); }
 }
 async function savePlugin() {
-  const r = await fetch(BASE+'/api/admin/plugins/'+editingPlugin,{method:'PUT',headers:ah(),body:JSON.stringify({content:document.getElementById('plug-editor-area').value})});
-  const d = await r.json();
-  if (d.success) { flash('apf','✅ Saved & reloaded','ok'); closePEditor(); }
-  else flash('apf','❌ Save failed','err');
+  const r = await fetch(BASE+'/api/admin/plugins/'+editingPlug,{method:'PUT',headers:ah(),body:JSON.stringify({content:document.getElementById('plug-area').value})});
+  flash('pf',(await r.json()).success?'✅ Saved & reloaded':'❌ Save failed','ok');
+  if ((await fetch(BASE+'/api/admin/plugins/'+editingPlug,{method:'PUT',headers:ah(),body:JSON.stringify({content:document.getElementById('plug-area').value})})).ok) closePEditor();
 }
-function closePEditor() { document.getElementById('plug-editor-wrap').classList.remove('open'); editingPlugin=''; }
+function closePEditor() { document.getElementById('plug-editor').classList.remove('open'); editingPlug=''; }
 async function delPlugin(name) {
   if (!confirm('Delete plugin: '+name)) return;
   await fetch(BASE+'/api/admin/plugins/'+name,{method:'DELETE',headers:ah()});
-  flash('apf','✅ Deleted','ok'); loadPlugins();
+  flash('pf','✅ Deleted','ok'); loadPlugins();
 }
 
-/*═══════════════════════════════════════════════════════
-  ADMIN — FILES
-═══════════════════════════════════════════════════════*/
+/* ── FILES ── */
 async function loadFiles(p) {
-  filePath = p || 'data';
+  filePath = p||'data';
   const parts = filePath.replace(/\\/g,'/').split('/').filter(Boolean);
-  const bc = document.getElementById('file-breadcrumb');
-  let built='', breadHTML='📁 ';
+  let breadHTML = '📁 ', built = '';
   parts.forEach((part,i) => {
     built += (i?'/':'') + part;
     const bp = built;
-    breadHTML += `<a href="#" style="color:var(--blue)" onclick="loadFiles('${bp}');return false">${part}</a>`;
+    breadHTML += `<a href="#" style="color:var(--neon);font-family:var(--ff-sub)" onclick="loadFiles('${bp}');return false">${part}</a>`;
     if (i < parts.length-1) breadHTML += '<span style="color:var(--t3);margin:0 4px">/</span>';
   });
-  bc.innerHTML = breadHTML;
+  document.getElementById('file-bread').innerHTML = breadHTML;
   try {
     const r = await fetch(BASE+'/api/admin/files?path='+encodeURIComponent(filePath),{headers:ah()});
     const d = await r.json();
     if (d.content !== undefined) {
       editingFile = filePath;
-      document.getElementById('file-edit-name').textContent = filePath.split('/').pop();
-      document.getElementById('file-editor-area').value = d.content;
-      document.getElementById('file-editor-wrap').classList.add('open');
+      document.getElementById('file-fname').textContent = filePath.split('/').pop();
+      document.getElementById('file-area').value = d.content;
+      document.getElementById('file-editor').classList.add('open');
       return;
     }
-    document.getElementById('file-editor-wrap').classList.remove('open');
+    document.getElementById('file-editor').classList.remove('open');
     const items = d.items||[];
     document.getElementById('file-list').innerHTML = items.map(item=>`
-      <div onclick="loadFiles('${item.path}')" style="display:flex;align-items:center;gap:10px;padding:9px 10px;cursor:pointer;border-radius:8px;transition:background .15s;font-size:.82rem;margin-bottom:2px" onmouseover="this.style.background='var(--s3)'" onmouseout="this.style.background=''">
+      <div onclick="loadFiles('${item.path}')" style="display:flex;align-items:center;gap:10px;padding:9px 10px;cursor:pointer;border-radius:8px;transition:var(--transition);font-family:var(--ff-sub);font-size:.82rem"
+        onmouseover="this.style.background='var(--s3)'" onmouseout="this.style.background=''">
         <span style="font-size:.9rem;width:20px;text-align:center">${item.isDir?'📁':'📄'}</span>
         <span style="flex:1">${item.name}</span>
-        <span style="font-size:.68rem;color:var(--t3);font-family:var(--mono)">${item.isDir?'—':(item.size/1024).toFixed(1)+' KB'}</span>
+        <span style="font-size:.67rem;color:var(--t3);font-family:var(--ff-mono)">${item.isDir?'—':(item.size/1024).toFixed(1)+' KB'}</span>
       </div>
-    `).join('') || '<div style="color:var(--t2);padding:16px">Empty</div>';
-  } catch { document.getElementById('file-list').innerHTML = '<div style="color:var(--red);padding:16px">Failed</div>'; }
+    `).join('') || '<div style="color:var(--t2);padding:16px;font-family:var(--ff-sub)">Empty</div>';
+  } catch { document.getElementById('file-list').innerHTML='<div style="color:var(--red);padding:16px">Failed</div>'; }
 }
+
 async function saveFile() {
-  const r = await fetch(BASE+'/api/admin/files',{method:'PUT',headers:ah(),body:JSON.stringify({path:editingFile,content:document.getElementById('file-editor-area').value})});
-  flash('aff',(await r.json()).success?'✅ Saved':'❌ Failed',(await r.ok ? 'ok':'err'));
+  const r = await fetch(BASE+'/api/admin/files',{method:'PUT',headers:ah(),body:JSON.stringify({path:editingFile,content:document.getElementById('file-area').value})});
+  flash('ff',(await r.json()).success?'✅ Saved':'❌ Failed',(await r.ok?'ok':'err'));
 }
 async function deleteFile() {
   if (!confirm('Delete: '+editingFile+'?')) return;
   await fetch(BASE+'/api/admin/files?path='+encodeURIComponent(editingFile),{method:'DELETE',headers:ah()});
   closeFEditor(); loadFiles(filePath.split('/').slice(0,-1).join('/')||'data');
 }
-function closeFEditor() { document.getElementById('file-editor-wrap').classList.remove('open'); editingFile=''; }
+function closeFEditor() { document.getElementById('file-editor').classList.remove('open'); editingFile=''; }
 
-/*═══════════════════════════════════════════════════════
-  ADMIN — CONFIG
-═══════════════════════════════════════════════════════*/
+/* ── CONFIG ── */
 async function loadConfig() {
   try {
     const r = await fetch(BASE+'/api/admin/config',{headers:ah()});
@@ -1417,73 +1672,56 @@ async function saveConfig() {
     menuImage:document.getElementById('cfg-img').value,
     mode:document.getElementById('cfg-mode').value,
   })});
-  flash('acf',(await r.json()).success?'✅ Config saved':'❌ Failed',(await r.ok?'ok':'err'));
+  flash('cf',(await r.json()).success?'✅ Config saved':'❌ Failed',(await r.ok?'ok':'err'));
 }
 
-/*═══════════════════════════════════════════════════════
-  ADMIN — ANNOUNCEMENTS
-═══════════════════════════════════════════════════════*/
+/* ── ANNOUNCEMENTS ── */
 async function loadAnn() {
-  const el = document.getElementById('a-ann-list');
   try {
     const r = await fetch(BASE+'/api/admin/announcements',{headers:ah()});
     const d = await r.json();
-    const icons = {success:'✅',warning:'⚠️',danger:'🚨',info:'ℹ️'};
-    el.innerHTML = (d.list||[]).length ? (d.list||[]).map(a=>`
-      <div class="ann-card">
-        <div class="ann-type-row"><span>${icons[a.type]||'📢'}</span><div class="ann-title">${a.title||'Announcement'}</div><span style="margin-left:auto;font-size:.68rem;color:var(--t3);font-family:var(--mono)">${timeAgo(a.at||a.createdAt)}</span></div>
-        <div class="ann-body">${a.body||a.text||''}</div>
-        <div class="ann-footer"><span class="badge b-user">${a.visibility||'all'}</span></div>
-      </div>
-    `).join('') : '<div style="padding:16px;color:var(--t2)">No announcements.</div>';
+    renderAnns('ann-list', d.list||[]);
   } catch {}
 }
 async function postAnn() {
   const body = document.getElementById('ann-body').value.trim();
-  if (!body) { flash('aanf','❌ Write a message','err'); return; }
-  const r = await fetch(BASE+'/api/admin/announcements',{method:'POST',headers:ah(),body:JSON.stringify({
-    title:document.getElementById('ann-title').value.trim(),
-    body,
-    type:document.getElementById('ann-type').value,
-    visibility:document.getElementById('ann-vis').value,
-  })});
-  if ((await r.json()).success) {
-    flash('aanf','✅ Announcement posted!','ok');
-    document.getElementById('ann-body').value = '';
-    document.getElementById('ann-title').value = '';
-    loadAnn();
-  } else flash('aanf','❌ Failed','err');
+  if (!body) { flash('anf','❌ Write a message','err'); return; }
+  try {
+    const r = await fetch(BASE+'/api/admin/announcements',{method:'POST',headers:ah(),body:JSON.stringify({
+      title:document.getElementById('ann-title').value.trim(),
+      body, type:document.getElementById('ann-type').value,
+      visibility:document.getElementById('ann-vis').value,
+    })});
+    if ((await r.json()).success) {
+      flash('anf','✅ Posted! Users see it instantly via SSE.','ok');
+      document.getElementById('ann-body').value = '';
+      document.getElementById('ann-title').value = '';
+      loadAnn();
+    } else flash('anf','❌ Failed','err');
+  } catch { flash('anf','❌ Failed','err'); }
 }
 
-/*═══════════════════════════════════════════════════════
-  ADMIN — SECURITY
-═══════════════════════════════════════════════════════*/
+/* ── SECURITY ── */
 async function changePw() {
-  const u = document.getElementById('sec-u').value.trim();
-  const p = document.getElementById('sec-p').value;
-  const c = document.getElementById('sec-c').value;
-  if (p !== c) { flash('asecf','❌ Passwords do not match','err'); return; }
-  if (p.length < 3) { flash('asecf','❌ Min 3 characters','err'); return; }
-  const r = await fetch(BASE+'/api/admin/change-password',{method:'POST',headers:ah(),body:JSON.stringify({newUser:u||undefined,newPass:p})});
-  if ((await r.json()).success) { flash('asecf','✅ Updated! Logging out…','ok'); setTimeout(adminLogout,2000); }
-  else flash('asecf','❌ Failed','err');
+  const u=document.getElementById('sec-u').value.trim();
+  const p=document.getElementById('sec-p').value;
+  const c=document.getElementById('sec-c').value;
+  if (p!==c) { flash('secf','❌ Passwords do not match','err'); return; }
+  if (p.length<3) { flash('secf','❌ Min 3 characters','err'); return; }
+  try {
+    const r = await fetch(BASE+'/api/admin/change-password',{method:'POST',headers:ah(),body:JSON.stringify({newUser:u||undefined,newPass:p})});
+    const d = await r.json();
+    if (d.success) { flash('secf','✅ Updated! Logging out…','ok'); setTimeout(adminLogout,2000); }
+    else flash('secf','❌ '+(d.error||'Failed'),'err');
+  } catch { flash('secf','❌ Failed','err'); }
 }
 
-/*═══════════════════════════════════════════════════════
-  KEYBOARD SHORTCUTS
-═══════════════════════════════════════════════════════*/
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') { closePEditor(); closeFEditor(); }
-});
+/* ── INIT ── */
+loadStats();
+setInterval(loadStats, 20000);
 document.getElementById('alp')?.addEventListener('keydown', e => { if(e.key==='Enter') doAdminLogin(); });
-document.getElementById('uid-input')?.addEventListener('input', e => { e.target.value = e.target.value.toUpperCase(); });
-document.getElementById('quick-id')?.addEventListener('input', e => { e.target.value = e.target.value.toUpperCase(); });
-
-/*═══════════════════════════════════════════════════════
-  INIT
-═══════════════════════════════════════════════════════*/
-loadLandingStats();
-setInterval(loadLandingStats, 20000);
+document.getElementById('pair-phone')?.addEventListener('keydown', e => { if(e.key==='Enter') doPair(); });
+document.addEventListener('keydown', e => { if(e.key==='Escape'){ closePEditor(); closeFEditor(); toggleDrawer(); document.getElementById('burger').classList.remove('open'); document.getElementById('drawer').classList.remove('open'); } });
 </script>
 </body>
 </html>
