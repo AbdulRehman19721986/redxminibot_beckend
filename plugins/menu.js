@@ -1,6 +1,4 @@
 // plugins/menu.js
-const settings = require('../settings');
-
 module.exports = {
     command: 'menu',
     aliases: ['help', 'cmds', 'start'],
@@ -19,7 +17,7 @@ module.exports = {
             categories.get(cat).push(name);
         }
 
-        // Add built‑ins (owner‑only commands) to 'owner' category
+        // Add built‑ins to 'owner' category (they are not in plugins)
         const builtins = ['ping', 'owner', 'mode', 'deployid', 'runtime', 'restart'];
         for (const cmd of builtins) {
             if (!cmds.has(cmd)) {
@@ -32,7 +30,7 @@ module.exports = {
         let menu = `╭┈───〔 ${config.botName || 'REDXBOT302'} 〕───⊷\n`;
         menu += `├▢ 🤖 Owner: ${config.ownerName}\n`;
         menu += `├▢ 🪄 Prefix: ${prefix}\n`;
-        menu += `├▢ 🎐 Version: 5.2.0\n`;
+        menu += `├▢ 🎐 Version: 6.0.0\n`;
         menu += `├▢ ☁️ Platform: ${config.platform || 'Local'}\n`;
         menu += `├▢ 📜 Plugins: ${cmds.size + builtins.length}\n`;
         menu += `├▢ ⏰ Runtime: ${formatUptime(process.uptime())}\n`;
