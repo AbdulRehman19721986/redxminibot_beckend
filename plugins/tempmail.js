@@ -1,106 +1,77 @@
-/**
- * REDXBOT302 — Temp Mail Plugin
- * Commands: tempmail, checkinbox
- * Owner: Abdul Rehman Rajpoot
- */
+const axios = require('axios');
+const fakevCard = require('../lib/fakevcard');
+module.exports = {
+    pattern: "tempmail",
+    desc: "Generate a new temporary email address",
+    category: "utility",
+    react: "📧",
+    filename: __filename,
+    use: ".tempmail",
 
-'use strict';
+    execute: async (conn, message, m, { from, reply }) => {
+        // Helper function to send messages with contextInfo
+        const sendMessageWithContext = async (text, quoted = message) => {
+            return await conn.sendMessage(from, {
+                text: text,
+                contextInfo: {
+                    forwardingScore: 999,
+                    isForwarded: true,
+                    forwardedNewsletterMessageInfo: {
+                        newsletterJid: "120363348739987203@newsletter",
+                        newsletterName: "❀༒★[ʀᴇᴅxʙᴏᴛ302]★༒❀",
+                        serverMessageId: 200
+                    }
+                }
+            }, { quoted: fakevCard });
+        };
 
-const { fetchJson } = require('../lib/functions2');
-const fakevCard     = require('../lib/fakevcard');
+        try {
+            // React 📧
+            if (module.exports.react) {
+                await conn.sendMessage(from, { react: { text: module.exports.react, key: message.key } });
+            }
 
-const BOT_NAME       = process.env.BOT_NAME       || '🔥 REDXBOT302 🔥';
-const NEWSLETTER_JID = process.env.NEWSLETTER_JID || '120363405513439052@newsletter';
+            const response = await axios.get('https://apis.davidcyriltech.my.id/temp-mail');
+            const { email, session_id, expires_at } = response.data;
 
-const ctxInfo = () => ({
-  forwardingScore: 999,
-  isForwarded: true,
-  forwardedNewsletterMessageInfo: {
-    newsletterJid: NEWSLETTER_JID,
-    newsletterName: `🔥 ${BOT_NAME}`,
-    serverMessageId: 200,
-  },
-});
+            // Format the expiration time and date
+            const expiresDate = new Date(expires_at);
+            const timeString = expiresDate.toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true
+            });
+            const dateString = expiresDate.toLocaleDateString('en-US', {
+                weekday: 'short',
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric'
+            });
 
-// In-memory temp mail store per user
-const tempMails = new Map();
+            // Create the complete message
+            const messageText = `
+📧 *TEMPORARY EMAIL GENERATED*
 
-module.exports = [
-  // ── GENERATE TEMP MAIL
-  {
-    pattern: 'tempmail',
-    alias: ['fakemail', 'tmail'],
-    desc: 'Generate a disposable email address',
-    category: 'Tools',
-    react: '📧',
-    use: '.tempmail',
-    execute: async (conn, msg, m, { from, reply, sender }) => {
-      try {
-        await conn.sendMessage(from, { react: { text: '⏳', key: msg.key } });
+✉️ *Email Address:*
+${email}
 
-        // Generate random email via 1secmail API
-        const res   = await fetchJson('https://www.1secmail.com/api/v1/?action=genRandomMailbox&count=1');
-        const email = Array.isArray(res) ? res[0] : res;
-        if (!email) return reply('❌ Could not generate temp mail.');
+⏳ *Expires:*
+${timeString} • ${dateString}
 
-        const [user, domain] = email.split('@');
-        tempMails.set(sender, { user, domain, email, created: Date.now() });
+🔑 *Session ID:*
+\`\`\`${session_id}\`\`\`
 
-        await conn.sendMessage(from, {
-          text:
-`📧 *Temporary Email Generated!*
+📥 *Check Inbox:*
+.inbox ${session_id}
 
-✉️ *Email:* \`${email}\`
+_Email will expire after 24 hours_
+`;
 
-━━━━━━━━━━━━━━━━━━━━━━━
-📥 *Check inbox:* .checkinbox
-🗑️ *Email expires:* ~60 minutes
-━━━━━━━━━━━━━━━━━━━━━━━
+            await sendMessageWithContext(messageText);
 
-> 🔥 ${BOT_NAME}`,
-          contextInfo: ctxInfo(),
-        }, { quoted: fakevCard });
-        await conn.sendMessage(from, { react: { text: '✅', key: msg.key } });
-      } catch (e) { reply(`❌ Error: ${e.message}`); }
-    },
-  },
-
-  // ── CHECK INBOX
-  {
-    pattern: 'checkinbox',
-    alias: ['inbox', 'readmail'],
-    desc: 'Check inbox of your temp email',
-    category: 'Tools',
-    react: '📬',
-    use: '.checkinbox',
-    execute: async (conn, msg, m, { from, reply, sender }) => {
-      try {
-        const mail = tempMails.get(sender);
-        if (!mail) return reply('❌ No temp mail found! Generate one first with *.tempmail*');
-
-        await conn.sendMessage(from, { react: { text: '⏳', key: msg.key } });
-
-        const msgs = await fetchJson(
-          `https://www.1secmail.com/api/v1/?action=getMessages&login=${mail.user}&domain=${mail.domain}`
-        );
-
-        if (!msgs || msgs.length === 0) {
-          await conn.sendMessage(from, {
-            text: `📬 *Inbox: ${mail.email}*\n\n📭 No messages yet. Check back soon!\n\n> 🔥 ${BOT_NAME}`,
-            contextInfo: ctxInfo(),
-          }, { quoted: fakevCard });
-          return;
+        } catch (e) {
+            console.error('TempMail error:', e);
+            await sendMessageWithContext(`❌ Error: ${e.message}`);
         }
-
-        let text = `📬 *Inbox: ${mail.email}*\n📨 ${msgs.length} message(s)\n\n`;
-        for (const [i, m] of msgs.slice(0, 5).entries()) {
-          text += `${i + 1}. 📩 *From:* ${m.from}\n   *Subject:* ${m.subject}\n   *Date:* ${m.date}\n\n`;
-        }
-        text += `> 🔥 ${BOT_NAME}`;
-
-        await conn.sendMessage(from, { text, contextInfo: ctxInfo() }, { quoted: fakevCard });
-        await conn.sendMessage(from, { react: { text: '✅', key: msg.key } });
-      } catch (e) { reply(`❌ Error: ${e.message}`); }
-    },
-  },
-];
+    }
+};

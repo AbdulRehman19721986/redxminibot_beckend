@@ -1,355 +1,227 @@
 /**
- * REDXBOT302 — Fun Plugin
- * Owner: Abdul Rehman Rajpoot
+ * REDXBOT302 - Fun & Entertainment Plugins
+ * Category: fun
  */
+const axios = require('axios');
+const cat = 'fun';
+const CH = {
+  contextInfo: {
+    forwardingScore: 1, isForwarded: true,
+    forwardedNewsletterMessageInfo: {
+      newsletterJid: '120363405513439052@newsletter',
+      newsletterName: 'REDXBOT302', serverMessageId: -1
+    }
+  }
+};
 
-'use strict';
+const jokes = ['Why don\'t scientists trust atoms? They make up everything!','I asked a dog what 2 minus 2 is. He said nothing.','I\'m reading a book about anti-gravity. It\'s impossible to put down.','Why did the math book look sad? Because it had too many problems.','I told my wife she was drawing her eyebrows too high. She looked surprised.','Why can\'t you give Elsa a balloon? She\'ll let it go.','What do you call a fake noodle? An Impasta.','I invented a new word! Plagiarism.','I\'m on a seafood diet. I see food and I eat it.','What do you call a sleeping dinosaur? A dino-snore.'];
+const facts = ['Honey never spoils – edible after 3000 years!','A group of flamingos is called a flamboyance.','Octopuses have three hearts.','Sharks are older than trees.','Wombat poop is cube-shaped.','A day on Venus is longer than a year on Venus.','Cleopatra lived closer in time to the Moon landing than to the building of the Great Pyramid.','The shortest war in history lasted 38–45 minutes.','Butterflies taste with their feet.','A snail can sleep for 3 years.'];
+const truths = ['What\'s the most embarrassing thing you\'ve ever done?','Have you ever lied to your best friend?','What\'s a secret you\'ve never told anyone?','Who was your first crush?','What\'s the most childish thing you still do?','Have you ever cheated on a test?','What\'s your biggest fear?','What is something you\'re ashamed of?','Have you ever broken someone\'s heart?','What\'s the worst thing you ever said to someone?'];
+const dares = ['Do 20 push-ups right now!','Send a voice message singing a song','Change your profile picture to a funny face for 1 hour','Call someone and say nothing for 30 seconds then hang up','Send a selfie making the ugliest face possible','Type a message with your elbows','Let the group write your WhatsApp status for a day'];
+const flirts = ['Are you a magician? Because whenever I look at you, everyone else disappears.','Do you have a map? I keep getting lost in your eyes.','Is your name Google? Because you have everything I\'ve been searching for.','Are you a parking ticket? Because you\'ve got "fine" written all over you.','Do you believe in love at first text?'];
+const wyr_q = ['Would you rather be invisible or be able to fly?','Would you rather lose all your money or lose all your contacts?','Would you rather always tell the truth or always lie?','Would you rather have unlimited battery or unlimited data?','Would you rather live in the past or the future?'];
 
-const { fetchJson }  = require('../lib/functions2');
-const { getRandom }  = require('../lib/functions');
-const fakevCard      = require('../lib/fakevcard');
+const plugins = [
 
-const BOT_NAME       = process.env.BOT_NAME       || '🔥 REDXBOT302 🔥';
-const NEWSLETTER_JID = process.env.NEWSLETTER_JID || '120363405513439052@newsletter';
+{
+  command: 'joke', aliases: ['joke2', 'funny'], category: cat,
+  description: 'Get a random joke', usage: '.joke',
+  async handler(sock, message, args, context) {
+    const chatId = context.chatId || message.key.remoteJid;
+    const joke = jokes[Math.floor(Math.random() * jokes.length)];
+    await sock.sendMessage(chatId, { text: `😂 *Joke of the Day*\n\n${joke}`, ...CH }, { quoted: message });
+  }
+},
 
-const ctxInfo = () => ({
-  forwardingScore: 999,
-  isForwarded: true,
-  forwardedNewsletterMessageInfo: { newsletterJid: NEWSLETTER_JID, newsletterName: `🔥 ${BOT_NAME}`, serverMessageId: 200 },
-});
+{
+  command: 'fact', aliases: ['funfact', 'facts'], category: cat,
+  description: 'Get a random fun fact', usage: '.fact',
+  async handler(sock, message, args, context) {
+    const chatId = context.chatId || message.key.remoteJid;
+    const fact = facts[Math.floor(Math.random() * facts.length)];
+    await sock.sendMessage(chatId, { text: `🤯 *Fun Fact*\n\n${fact}`, ...CH }, { quoted: message });
+  }
+},
 
-const send = (conn, from, text, mentions = []) =>
-  conn.sendMessage(from, { text, mentions, contextInfo: ctxInfo() }, { quoted: fakevCard });
+{
+  command: 'truth', aliases: ['truthq'], category: cat,
+  description: 'Get a truth question', usage: '.truth',
+  async handler(sock, message, args, context) {
+    const chatId = context.chatId || message.key.remoteJid;
+    const q = truths[Math.floor(Math.random() * truths.length)];
+    await sock.sendMessage(chatId, { text: `🫣 *Truth*\n\n${q}`, ...CH }, { quoted: message });
+  }
+},
 
-module.exports = [
-  // ── JOKE
-  {
-    pattern: 'joke',
-    desc: 'Random joke',
-    category: 'Fun',
-    react: '😂',
-    use: '.joke',
-    execute: async (conn, msg, m, { from, reply }) => {
-      try {
-        await conn.sendMessage(from, { react: { text: '⏳', key: msg.key } });
-        const data = await fetchJson('https://official-joke-api.appspot.com/random_joke');
-        await send(conn, from,
-`╭───[ 😂 *Random Joke* ]───
-│
-├ *Setup:* ${data.setup}
-├ *Punchline:* ${data.punchline}
-│
-╰───[ > 🔥 ${BOT_NAME} ]───`);
-        await conn.sendMessage(from, { react: { text: '😂', key: msg.key } });
-      } catch (e) { reply(`❌ ${e.message}`); }
-    },
-  },
+{
+  command: 'dare', aliases: ['dareq'], category: cat,
+  description: 'Get a dare challenge', usage: '.dare',
+  async handler(sock, message, args, context) {
+    const chatId = context.chatId || message.key.remoteJid;
+    const d = dares[Math.floor(Math.random() * dares.length)];
+    await sock.sendMessage(chatId, { text: `😈 *Dare*\n\n${d}`, ...CH }, { quoted: message });
+  }
+},
 
-  // ── FACT
-  {
-    pattern: 'fact',
-    desc: 'Random interesting fact',
-    category: 'Fun',
-    react: '🧠',
-    use: '.fact',
-    execute: async (conn, msg, m, { from, reply }) => {
-      try {
-        await conn.sendMessage(from, { react: { text: '⏳', key: msg.key } });
-        const data = await fetchJson('https://uselessfacts.jsph.pl/random.json?language=en');
-        await send(conn, from,
-`🧠 *Random Fact*\n\n${data.text}\n\n> 🔥 ${BOT_NAME}`);
-        await conn.sendMessage(from, { react: { text: '✅', key: msg.key } });
-      } catch (e) { reply(`❌ ${e.message}`); }
-    },
-  },
+{
+  command: 'flirt', aliases: ['pickup', 'pickupline'], category: cat,
+  description: 'Send a flirty pickup line', usage: '.flirt',
+  async handler(sock, message, args, context) {
+    const chatId = context.chatId || message.key.remoteJid;
+    const f = flirts[Math.floor(Math.random() * flirts.length)];
+    await sock.sendMessage(chatId, { text: `😍 *Flirt*\n\n${f}`, ...CH }, { quoted: message });
+  }
+},
 
-  // ── QUOTE
-  {
-    pattern: 'quote',
-    desc: 'Inspirational quote',
-    category: 'Fun',
-    react: '💬',
-    use: '.quote',
-    execute: async (conn, msg, m, { from, reply }) => {
-      try {
-        await conn.sendMessage(from, { react: { text: '⏳', key: msg.key } });
-        const data = await fetchJson('https://zenquotes.io/api/random');
-        await send(conn, from,
-`💬 *Quote of the Day*\n\n_"${data[0].q}"_\n\n— *${data[0].a}*\n\n> 🔥 ${BOT_NAME}`);
-        await conn.sendMessage(from, { react: { text: '✅', key: msg.key } });
-      } catch (e) { reply(`❌ ${e.message}`); }
-    },
-  },
+{
+  command: 'wyr', aliases: ['wouldyourather'], category: cat,
+  description: 'Would you rather question', usage: '.wyr',
+  async handler(sock, message, args, context) {
+    const chatId = context.chatId || message.key.remoteJid;
+    const q = wyr_q[Math.floor(Math.random() * wyr_q.length)];
+    await sock.sendMessage(chatId, { text: `🤔 *Would You Rather?*\n\n${q}`, ...CH }, { quoted: message });
+  }
+},
 
-  // ── FLIRT
-  {
-    pattern: 'flirt',
-    desc: 'Random flirt line',
-    category: 'Fun',
-    react: '💘',
-    use: '.flirt',
-    execute: async (conn, msg, m, { from, reply }) => {
-      const lines = [
-        "Are you a WiFi signal? Because I'm feeling a connection. 📶",
-        "Do you have a map? I keep getting lost in your eyes. 🗺️",
-        "Are you a bank loan? Because you've got my interest! 💰",
-        "Do you believe in love at first text? Because you just made my heart skip. 💬",
-        "Is your name Google? Because you have everything I've been searching for. 🔍",
-        "You must be tired because you've been running through my mind all day. 😍",
-        "Are you a camera? Every time I look at you, I smile. 📸",
-      ];
-      await send(conn, from, `💘 *Flirt Line*\n\n${getRandom(lines)}\n\n> 🔥 ${BOT_NAME}`);
-    },
-  },
+{
+  command: '8ball', aliases: ['eightball', 'magic8'], category: cat,
+  description: 'Ask the magic 8-ball', usage: '.8ball <question>',
+  async handler(sock, message, args, context) {
+    const chatId = context.chatId || message.key.remoteJid;
+    const responses = ['Yes, definitely!','It is certain.','Outlook good.','Signs point to yes.','Reply hazy, try again.','Ask again later.','Don\'t count on it.','My reply is no.','Very doubtful.','Absolutely not!','Without a doubt!','Most likely yes.'];
+    const q = args.join(' ');
+    if (!q) return sock.sendMessage(chatId, { text: '❌ Ask a question! Usage: .8ball <your question>', ...CH }, { quoted: message });
+    const ans = responses[Math.floor(Math.random() * responses.length)];
+    await sock.sendMessage(chatId, { text: `🎱 *Magic 8-Ball*\n\n*Q:* ${q}\n*A:* ${ans}`, ...CH }, { quoted: message });
+  }
+},
 
-  // ── TRUTH
-  {
-    pattern: 'truth',
-    desc: 'Truth question',
-    category: 'Fun',
-    react: '❓',
-    use: '.truth',
-    execute: async (conn, msg, m, { from }) => {
-      const questions = [
-        "What's the most embarrassing thing you've done in public?",
-        "Have you ever lied to get out of trouble? What was it?",
-        "What's the biggest secret you've kept from your parents?",
-        "Who is your crush right now?",
-        "What is the most childish thing you still do?",
-        "Have you ever cheated on a test?",
-        "What's the worst thing someone has caught you doing?",
-        "What's a habit you have that you're embarrassed about?",
-      ];
-      await send(conn, from, `❓ *Truth Question*\n\n${getRandom(questions)}\n\n> 🔥 ${BOT_NAME}`);
-    },
-  },
+{
+  command: 'ship', aliases: ['love', 'lovecalc'], category: cat,
+  description: 'Calculate love percentage', usage: '.ship @user1 @user2',
+  async handler(sock, message, args, context) {
+    const chatId = context.chatId || message.key.remoteJid;
+    const pct = Math.floor(Math.random() * 101);
+    const bar = '💗'.repeat(Math.floor(pct / 10)) + '🖤'.repeat(10 - Math.floor(pct / 10));
+    const emoji = pct >= 80 ? '💞' : pct >= 50 ? '💕' : '💔';
+    await sock.sendMessage(chatId, { text: `${emoji} *Love Calculator*\n\n${bar}\n\n*Result:* ${pct}% love! ${pct >= 80 ? 'Perfect match! 💍' : pct >= 50 ? 'Good chance! 😊' : 'Maybe just friends 😅'}`, ...CH }, { quoted: message });
+  }
+},
 
-  // ── DARE
-  {
-    pattern: 'dare',
-    desc: 'Dare challenge',
-    category: 'Fun',
-    react: '🔥',
-    use: '.dare',
-    execute: async (conn, msg, m, { from }) => {
-      const dares = [
-        "Send a voice note singing your favourite song 🎤",
-        "Change your WhatsApp profile pic to something funny for 1 hour 📸",
-        "Send the last photo in your gallery 🖼️",
-        "Type a message with your eyes closed and send it 😂",
-        "Say 5 nice things about everyone in the chat 💬",
-        "Send your oldest WhatsApp message screenshot 🕰️",
-        "Do 20 pushups and send a video! 💪",
-      ];
-      await send(conn, from, `🔥 *Dare Challenge*\n\n${getRandom(dares)}\n\n> 🔥 ${BOT_NAME}`);
-    },
-  },
+{
+  command: 'rate', aliases: ['rateme'], category: cat,
+  description: 'Rate something out of 10', usage: '.rate <anything>',
+  async handler(sock, message, args, context) {
+    const chatId = context.chatId || message.key.remoteJid;
+    const subject = args.join(' ') || 'you';
+    const rating = Math.floor(Math.random() * 11);
+    const stars = '⭐'.repeat(rating) + '☆'.repeat(10 - rating);
+    await sock.sendMessage(chatId, { text: `⭐ *Rating: ${subject}*\n\n${stars}\n*Score: ${rating}/10*`, ...CH }, { quoted: message });
+  }
+},
 
-  // ── COIN FLIP
-  {
-    pattern: 'coin',
-    alias: ['flip'],
-    desc: 'Flip a coin',
-    category: 'Fun',
-    react: '🪙',
-    use: '.coin',
-    execute: async (conn, msg, m, { from }) => {
-      const result = Math.random() < 0.5 ? '🪙 *HEADS*' : '🪙 *TAILS*';
-      await send(conn, from, `*Coin Flip Result:* ${result}\n\n> 🔥 ${BOT_NAME}`);
-    },
-  },
+{
+  command: 'howgay', aliases: ['gaymeter'], category: cat,
+  description: 'How gay are you?', usage: '.howgay @user',
+  async handler(sock, message, args, context) {
+    const chatId = context.chatId || message.key.remoteJid;
+    const pct = Math.floor(Math.random() * 101);
+    await sock.sendMessage(chatId, { text: `🏳️‍🌈 *Gay Meter*\n\n${'🌈'.repeat(Math.ceil(pct/10))}${'⬜'.repeat(10 - Math.ceil(pct/10))}\n*Result: ${pct}%*`, ...CH }, { quoted: message });
+  }
+},
 
-  // ── DICE
-  {
-    pattern: 'dice',
-    alias: ['roll'],
-    desc: 'Roll a dice',
-    category: 'Fun',
-    react: '🎲',
-    use: '.dice',
-    execute: async (conn, msg, m, { from }) => {
-      const faces = ['⚀','⚁','⚂','⚃','⚄','⚅'];
-      const val   = Math.ceil(Math.random() * 6);
-      await send(conn, from, `🎲 *Dice Roll:* ${faces[val - 1]} *${val}*\n\n> 🔥 ${BOT_NAME}`);
-    },
-  },
+{
+  command: 'iq', aliases: ['iqtest'], category: cat,
+  description: 'Check your IQ', usage: '.iq @user',
+  async handler(sock, message, args, context) {
+    const chatId = context.chatId || message.key.remoteJid;
+    const iq = Math.floor(Math.random() * 201);
+    const verdict = iq >= 160 ? '🧠 Genius!' : iq >= 130 ? '🤓 Very smart' : iq >= 100 ? '😊 Average' : iq >= 70 ? '😅 Below average' : '🥴 Hmm...';
+    await sock.sendMessage(chatId, { text: `🧠 *IQ Test*\n\n*Score:* ${iq} IQ\n*Verdict:* ${verdict}`, ...CH }, { quoted: message });
+  }
+},
 
-  // ── 8BALL
-  {
-    pattern: '8ball',
-    alias: ['magic8'],
-    desc: 'Ask the magic 8 ball',
-    category: 'Fun',
-    react: '🎱',
-    use: '.8ball will I win the lottery?',
-    execute: async (conn, msg, m, { from, q, reply }) => {
-      if (!q) return reply('❌ Ask a yes/no question!');
-      const answers = [
-        '✅ It is certain.', '✅ Without a doubt.', '✅ Yes, definitely!', '✅ You may rely on it.',
-        '✅ As I see it, yes.', '⚠️ Reply hazy, try again.', '⚠️ Ask again later.',
-        '⚠️ Cannot predict now.', '❌ Don\'t count on it.', '❌ Very doubtful.',
-        '❌ My sources say no.', '❌ Outlook not so good.',
-      ];
-      await send(conn, from,
-`🎱 *Magic 8-Ball*
+{
+  command: 'roast', aliases: ['insult'], category: cat,
+  description: 'Roast someone', usage: '.roast @user',
+  async handler(sock, message, args, context) {
+    const chatId = context.chatId || message.key.remoteJid;
+    const roasts = ['I\'d explain it to you but I left my crayons at home.','You\'re the reason the gene pool needs a lifeguard.','I\'d agree with you but then we\'d both be wrong.','You\'re like a cloud – when you disappear, it\'s a beautiful day.','I\'d insult you, but you won\'t understand big words anyway.'];
+    await sock.sendMessage(chatId, { text: `🔥 *Roasted!*\n\n${roasts[Math.floor(Math.random() * roasts.length)]}`, ...CH }, { quoted: message });
+  }
+},
 
-*Q:* ${q}
-*A:* ${getRandom(answers)}
+{
+  command: 'compliment', alias: ['praise'], category: cat,
+  description: 'Compliment someone', usage: '.compliment @user',
+  async handler(sock, message, args, context) {
+    const chatId = context.chatId || message.key.remoteJid;
+    const compliments = ['You are absolutely amazing!','You have the best smile!','Your creativity is incredible.','The world is a better place because of you!','You are one of the most genuine people I\'ve ever met.'];
+    await sock.sendMessage(chatId, { text: `💖 *Compliment*\n\n${compliments[Math.floor(Math.random() * compliments.length)]}`, ...CH }, { quoted: message });
+  }
+},
 
-> 🔥 ${BOT_NAME}`);
-    },
-  },
+{
+  command: 'trivia', aliases: ['quiz'], category: cat,
+  description: 'Get a random trivia question', usage: '.trivia',
+  async handler(sock, message, args, context) {
+    const chatId = context.chatId || message.key.remoteJid;
+    const trivia = [
+      { q: 'What is the capital of Japan?', a: 'Tokyo' },
+      { q: 'How many bones are in the human body?', a: '206' },
+      { q: 'What is the largest planet in our solar system?', a: 'Jupiter' },
+      { q: 'Who wrote Romeo and Juliet?', a: 'William Shakespeare' },
+      { q: 'What is the chemical symbol for water?', a: 'H₂O' },
+    ];
+    const t = trivia[Math.floor(Math.random() * trivia.length)];
+    await sock.sendMessage(chatId, { text: `🧩 *Trivia*\n\n*Q:* ${t.q}\n\nSend your answer! The answer is: ||${t.a}||`, ...CH }, { quoted: message });
+  }
+},
 
-  // ── HOWGAY
-  {
-    pattern: 'howgay',
-    alias: ['gayrate'],
-    desc: 'Gay rate meter (fun)',
-    category: 'Fun',
-    react: '🌈',
-    use: '.howgay @user',
-    execute: async (conn, msg, m, { from, reply }) => {
-      const rate = Math.floor(Math.random() * 101);
-      const bar  = '█'.repeat(Math.floor(rate / 10)) + '░'.repeat(10 - Math.floor(rate / 10));
-      const target = m.mentionedJid?.[0] || m.sender;
-      await conn.sendMessage(from, {
-        text: `🌈 *Gay Rate*\n\n@${target.split('@')[0]}\n\n[${bar}] ${rate}%\n\n> 🔥 ${BOT_NAME}`,
-        mentions: [target],
-        contextInfo: ctxInfo(),
-      }, { quoted: fakevCard });
-    },
-  },
+{
+  command: 'dice', aliases: ['roll'], category: cat,
+  description: 'Roll a dice', usage: '.dice [sides]',
+  async handler(sock, message, args, context) {
+    const chatId = context.chatId || message.key.remoteJid;
+    const sides = parseInt(args[0]) || 6;
+    const roll = Math.floor(Math.random() * sides) + 1;
+    await sock.sendMessage(chatId, { text: `🎲 *Dice Roll (${sides}-sided)*\n\nResult: *${roll}*`, ...CH }, { quoted: message });
+  }
+},
 
-  // ── SHIP
-  {
-    pattern: 'ship',
-    desc: 'Ship two users',
-    category: 'Fun',
-    react: '💑',
-    use: '.ship @user1 @user2',
-    execute: async (conn, msg, m, { from, reply }) => {
-      if (!m.mentionedJid || m.mentionedJid.length < 2) return reply('❌ Mention 2 users to ship!');
-      const [u1, u2] = m.mentionedJid;
-      const rate = Math.floor(Math.random() * 101);
-      const bar  = '💗'.repeat(Math.floor(rate / 10)) + '🖤'.repeat(10 - Math.floor(rate / 10));
-      await conn.sendMessage(from, {
-        text:
-`💑 *SHIP METER*
+{
+  command: 'coin', aliases: ['flip', 'coinflip'], category: cat,
+  description: 'Flip a coin', usage: '.coin',
+  async handler(sock, message, args, context) {
+    const chatId = context.chatId || message.key.remoteJid;
+    const result = Math.random() > 0.5 ? 'Heads 🪙' : 'Tails 🔵';
+    await sock.sendMessage(chatId, { text: `🪙 *Coin Flip*\n\nResult: *${result}*`, ...CH }, { quoted: message });
+  }
+},
 
-@${u1.split('@')[0]} 💘 @${u2.split('@')[0]}
+{
+  command: 'simp', aliases: ['simpmeter'], category: cat,
+  description: 'Simp meter', usage: '.simp @user',
+  async handler(sock, message, args, context) {
+    const chatId = context.chatId || message.key.remoteJid;
+    const pct = Math.floor(Math.random() * 101);
+    await sock.sendMessage(chatId, { text: `😔 *Simp Meter*\n\nSimpiness: *${pct}%*\n${pct > 80 ? '🚨 Certified Simp!' : pct > 50 ? '😅 Kinda a simp' : '😎 Not a simp!'}`, ...CH }, { quoted: message });
+  }
+},
 
-[${bar}] ${rate}% compatible!
+{
+  command: 'slot', aliases: ['slots'], category: cat,
+  description: 'Play slot machine', usage: '.slot',
+  async handler(sock, message, args, context) {
+    const chatId = context.chatId || message.key.remoteJid;
+    const items = ['🍎', '🍋', '🍇', '🔔', '⭐', '💎', '7️⃣'];
+    const s = () => items[Math.floor(Math.random() * items.length)];
+    const a = s(), b = s(), c = s();
+    const win = a === b && b === c;
+    await sock.sendMessage(chatId, { text: `🎰 *Slot Machine*\n\n| ${a} | ${b} | ${c} |\n\n${win ? '🎉 *JACKPOT! YOU WIN!*' : '😔 *No luck this time...*'}`, ...CH }, { quoted: message });
+  }
+},
 
-${rate >= 70 ? '💑 Perfect match!' : rate >= 40 ? '💛 Could work!' : '💔 Not meant to be...'}
-
-> 🔥 ${BOT_NAME}`,
-        mentions: [u1, u2],
-        contextInfo: ctxInfo(),
-      }, { quoted: fakevCard });
-    },
-  },
-
-  // ── ROAST
-  {
-    pattern: 'roast',
-    desc: 'Roast a user',
-    category: 'Fun',
-    react: '🔥',
-    use: '.roast @user',
-    execute: async (conn, msg, m, { from, reply }) => {
-      const target = m.mentionedJid?.[0] || m.quoted?.sender;
-      if (!target) return reply('❌ Mention someone to roast!');
-      const roasts = [
-        "You're the human equivalent of a participation trophy. 🏆",
-        "I'd agree with you but then we'd both be wrong. 🤷",
-        "You're not stupid; you just have bad luck thinking. 💭",
-        "If laughter is the best medicine, your face must be curing diseases. 😂",
-        "I'd call you a tool, but even tools are useful. 🔧",
-        "You're like a cloud. When you disappear, it's a beautiful day. ☀️",
-        "You bring everyone so much joy when you leave the room. 😅",
-      ];
-      await conn.sendMessage(from, {
-        text: `🔥 *Roast for @${target.split('@')[0]}*\n\n${getRandom(roasts)}\n\n> 🔥 ${BOT_NAME}`,
-        mentions: [target],
-        contextInfo: ctxInfo(),
-      }, { quoted: fakevCard });
-    },
-  },
-
-  // ── COMPLIMENT
-  {
-    pattern: 'compliment',
-    alias: ['compliment'],
-    desc: 'Compliment a user',
-    category: 'Fun',
-    react: '💝',
-    use: '.compliment @user',
-    execute: async (conn, msg, m, { from, reply }) => {
-      const target = m.mentionedJid?.[0] || m.quoted?.sender || m.sender;
-      const compliments = [
-        "You have an amazing energy that lights up any room! ✨",
-        "Your intelligence is truly inspiring! 🧠",
-        "You make the world a better place just by being in it! 🌍",
-        "You have the best smile! 😊",
-        "You're one of the kindest people I've ever met! 💝",
-        "Your positivity is absolutely contagious! 🌟",
-        "You're incredibly talented and don't even know it! 🎯",
-      ];
-      await conn.sendMessage(from, {
-        text: `💝 *Compliment for @${target.split('@')[0]}*\n\n${getRandom(compliments)}\n\n> 🔥 ${BOT_NAME}`,
-        mentions: [target],
-        contextInfo: ctxInfo(),
-      }, { quoted: fakevCard });
-    },
-  },
-
-  // ── WYR (Would You Rather)
-  {
-    pattern: 'wyr',
-    desc: 'Would you rather question',
-    category: 'Fun',
-    react: '🤔',
-    use: '.wyr',
-    execute: async (conn, msg, m, { from }) => {
-      const questions = [
-        ['be able to fly', 'be invisible'],
-        ['have unlimited money', 'have unlimited time'],
-        ['live in the past', 'live in the future'],
-        ['be famous', 'be rich but unknown'],
-        ['speak all languages', 'play all instruments'],
-        ['never use social media', 'never watch TV/movies'],
-        ['have no enemies', 'have 100 true friends'],
-      ];
-      const q = getRandom(questions);
-      await send(conn, from,
-`🤔 *Would You Rather?*
-
-🅰️ ${q[0]}
-     OR
-🅱️ ${q[1]}
-
-> 🔥 ${BOT_NAME}`);
-    },
-  },
-
-  // ── RANK
-  {
-    pattern: 'rank',
-    desc: 'Get your random rank',
-    category: 'Fun',
-    react: '🏆',
-    use: '.rank',
-    execute: async (conn, msg, m, { from, sender }) => {
-      const ranks = [
-        '👑 Grand Master', '💎 Diamond', '🥇 Platinum', '🥈 Gold',
-        '🥉 Silver', '⚔️ Bronze', '🛡️ Iron', '🔰 Rookie',
-      ];
-      const rank = getRandom(ranks);
-      await conn.sendMessage(from, {
-        text: `🏆 *Your Rank*\n\n@${sender.split('@')[0]}: ${rank}\n\n> 🔥 ${BOT_NAME}`,
-        mentions: [sender],
-        contextInfo: ctxInfo(),
-      }, { quoted: fakevCard });
-    },
-  },
 ];
+
+module.exports = plugins;
