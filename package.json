@@ -41,7 +41,6 @@
     "node-cache": "^5.1.2",
     "node-fetch": "^2.7.0",
     "node-id3": "^0.2.6",
-    "node-youtube-music": "^1.2.8",
     "pino": "^9.9.0",
     "qrcode": "^1.5.3",
     "socket.io": "^4.8.1",
