@@ -1,44 +1,121 @@
 /**
- * REDXBOT302 v6 — Group Events (Welcome / Goodbye / Promote / Demote)
- * Reads custom messages from store, falls back to default
- * Owner: Abdul Rehman Rajpoot & Muzamil Khan
+ * REDXBOT302 — Group Events (Welcome / Goodbye)
+ * Owner: Abdul Rehman Rajpoot
  */
+
 'use strict';
-const store = require('../lib/lightweight_store');
 
 module.exports = async function GroupEvents(conn, update, config = {}) {
   try {
-    const { botName='🔥 REDXBOT302 🔥', ownerName='Abdul Rehman Rajpoot', menuImage='https://files.catbox.moe/s36b12.jpg', newsletterJid='120363405513439052@newsletter' } = config;
+    const {
+      botName     = '🔥 REDXBOT302 🔥',
+      ownerName   = 'Abdul Rehman Rajpoot',
+      menuImage   = 'https://files.catbox.moe/s36b12.jpg',
+      newsletterJid = '120363405513439052@newsletter',
+    } = config;
+
     const { id, participants, action } = update;
-    let meta; try { meta = await conn.groupMetadata(id); } catch {}
-    const groupName = meta?.subject || id;
-    const groupSize = meta?.participants?.length || 0;
-    const PREFIX    = process.env.PREFIX || '.';
-    const ctxInfo   = { forwardingScore:999, isForwarded:true, forwardedNewsletterMessageInfo:{newsletterJid, newsletterName:`🔥 ${botName}`, serverMessageId:200} };
-    const fill = (t,num) => t.replace(/@user/g,`@${num}`).replace(/@group/g,groupName).replace(/@count/g,String(groupSize)).replace(/@bot/g,botName).replace(/@prefix/g,PREFIX);
+
+    // Get group info
+    let groupName = id;
+    let groupDesc = '';
+    let groupSize = 0;
+    try {
+      const meta  = await conn.groupMetadata(id);
+      groupName   = meta.subject || id;
+      groupDesc   = meta.desc    || '';
+      groupSize   = meta.participants.length;
+    } catch {}
+
+    const ctxInfo = {
+      forwardingScore: 999,
+      isForwarded: true,
+      forwardedNewsletterMessageInfo: {
+        newsletterJid,
+        newsletterName: `🔥 ${botName}`,
+        serverMessageId: 200,
+      },
+    };
 
     for (const jid of participants) {
       const num = jid.split('@')[0];
 
       if (action === 'add' || action === 'invite') {
-        const ws = await store.getSetting(id,'welcome') || {};
-        if (ws.enabled === false) continue;
-        const caption = ws.msg ? fill(ws.msg, num)
-          : `╔══════════════════════════╗\n║  👋 *WELCOME!*             ║\n╚══════════════════════════╝\n\nWelcome @${num}! 🎉\n\n📌 *Group:* ${groupName}\n👥 *Members:* ${groupSize}\n\n📖 *Rules:*\n• Be respectful\n• No spam or flooding\n• No NSFW content\n• Follow admin instructions\n\n💡 Type *${PREFIX}menu* to see commands.\n\n> 🔥 Powered by ${botName}`;
-        await conn.sendMessage(id, { image:{url:menuImage}, caption, mentions:[jid], contextInfo:ctxInfo }).catch(()=>{});
+        // Welcome message
+        await conn.sendMessage(id, {
+          image: { url: menuImage },
+          caption:
+`╔══════════════════════════╗
+║  👋 *WELCOME TO THE GROUP* ║
+╚══════════════════════════╝
+
+Welcome @${num}! 🎉
+
+📌 *Group:* ${groupName}
+👥 *Members:* ${groupSize}
+
+📖 *Group Rules:*
+• Be respectful to everyone
+• No spam or flooding
+• No bad words or NSFW content
+• Follow admin instructions
+
+💡 Type *${process.env.PREFIX || '.'}menu* to see bot commands.
+
+> 🔥 Powered by ${botName}
+> By ${ownerName}`,
+          mentions: [jid],
+          contextInfo: ctxInfo,
+        });
 
       } else if (action === 'remove' || action === 'leave') {
-        const gs = await store.getSetting(id,'goodbye') || {};
-        if (gs.enabled === false) continue;
-        const text = gs.msg ? fill(gs.msg, num)
-          : `╔══════════════════════════╗\n║  👋 *GOODBYE!*             ║\n╚══════════════════════════╝\n\n@${num} has left. 😢\n\n📌 *Group:* ${groupName}\n👥 *Members now:* ${Math.max(0,groupSize-1)}\n\nWe'll miss you! Come back anytime. 🙏\n\n> 🔥 Powered by ${botName}`;
-        await conn.sendMessage(id, { text, mentions:[jid], contextInfo:ctxInfo }).catch(()=>{});
+        // Goodbye message
+        await conn.sendMessage(id, {
+          text:
+`╔══════════════════════════╗
+║  👋 *GOODBYE!*             ║
+╚══════════════════════════╝
+
+@${num} has left the group. 😢
+
+📌 *Group:* ${groupName}
+👥 *Members now:* ${Math.max(0, groupSize - 1)}
+
+We will miss you! Come back anytime. 🙏
+
+> 🔥 Powered by ${botName}`,
+          mentions: [jid],
+          contextInfo: ctxInfo,
+        });
 
       } else if (action === 'promote') {
-        await conn.sendMessage(id, { text:`🎊 *PROMOTED!*\n\n@${num} is now an *admin*! 👑\n\n> 🔥 ${botName}`, mentions:[jid], contextInfo:ctxInfo }).catch(()=>{});
+        await conn.sendMessage(id, {
+          text:
+`🎊 *ADMIN PROMOTED!*
+
+@${num} is now an admin! 👑
+
+Congratulations! 🎉
+
+> 🔥 ${botName}`,
+          mentions: [jid],
+          contextInfo: ctxInfo,
+        });
+
       } else if (action === 'demote') {
-        await conn.sendMessage(id, { text:`📢 *DEMOTED*\n\n@${num} is no longer an admin.\n\n> 🔥 ${botName}`, mentions:[jid], contextInfo:ctxInfo }).catch(()=>{});
+        await conn.sendMessage(id, {
+          text:
+`📢 *ADMIN DEMOTED*
+
+@${num} is no longer an admin.
+
+> 🔥 ${botName}`,
+          mentions: [jid],
+          contextInfo: ctxInfo,
+        });
       }
     }
-  } catch (e) { console.error('GroupEvents error:', e.message); }
+  } catch (e) {
+    console.error('GroupEvents error:', e.message);
+  }
 };
