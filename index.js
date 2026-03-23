@@ -1,7 +1,7 @@
 'use strict';
 /**
- * 🔥 REDXBOT302 MINI — FINAL EDITION v5.0
- * Per-number sessions · User Deploy Keys · Admin Panel · Arslan-MD plugins
+ * 🔥 REDXBOT302 — FINAL EDITION v5.1
+ * Full owner + sudo support · Paired users can use commands
  * Owner: Abdul Rehman Rajpoot (+923009842133)
  */
 
@@ -49,6 +49,9 @@ const WA_GROUP     = 'https://chat.whatsapp.com/LhSmx2SeXX75r8I2bxsNDo';
 const TG_GROUP     = 'https://t.me/TeamRedxhacker2';
 global.BOT_MODE    = process.env.BOT_MODE || 'public';
 
+// Sudo users (comma‑separated numbers, e.g. "1234567890,9876543210")
+const SUDO_USERS = (process.env.SUDO_USERS || '').split(',').map(n => n.trim()).filter(Boolean);
+
 let adminUsername = process.env.ADMIN_USERNAME || 'redx';
 let adminPassword = process.env.ADMIN_PASSWORD || 'redx';
 const adminSessions = new Map(); // token → { user, ts }
@@ -86,7 +89,6 @@ const saveStats = () => { try { fs.writeFileSync(DATA_FILE, JSON.stringify({ ...
 loadStats(); setInterval(saveStats, 30000);
 
 // ── DEPLOYS REGISTRY ─────────────────────────────────────────
-// Each deploy record: { id, platform, createdAt, numbers[], pairCount, lastSeen, botName, prefix, mode, ownerName, deployKey }
 let deploys = {};
 const loadDeploys = () => { try { if (fs.existsSync(DEPLOYS_FILE)) deploys = JSON.parse(fs.readFileSync(DEPLOYS_FILE,'utf8')); } catch {} };
 const saveDeploys = () => { try { fs.writeFileSync(DEPLOYS_FILE, JSON.stringify(deploys,null,2)); } catch {} };
@@ -100,12 +102,10 @@ if (!deploys[DEPLOY_ID]) {
     createdAt: new Date().toISOString(),
     numbers: [],
     pairCount: 0,
-    // User-configurable fields
     botName: BOT_NAME,
     ownerName: OWNER_NAME,
     prefix: PREFIX,
     mode: global.BOT_MODE,
-    // Security: unique key only this deploy owner knows
     deployKey: crypto.randomBytes(16).toString('hex'),
   };
 }
@@ -118,7 +118,7 @@ const loadServers = () => { try { if (fs.existsSync(SERVERS_FILE)) servers = JSO
 const saveServers = () => { try { fs.writeFileSync(SERVERS_FILE, JSON.stringify(servers,null,2)); } catch {} };
 loadServers();
 
-// ── ACTIVE CONNECTIONS (per number — Arslan MD style) ────────
+// ── ACTIVE CONNECTIONS (per number) ────────────────────────
 const activeConnections = new Map();
 
 const broadcastStats = () => {
@@ -141,27 +141,20 @@ const loadPlugins = () => {
       delete require.cache[require.resolve(fp)];
       const mod = require(fp);
 
-      // normalise() converts any plugin style into the internal {pattern, execute} format.
-      // Supports:
-      //   Style A (original): { pattern, execute, alias[] }
-      //   Style B (new):      { command, handler, aliases[] }
-      //   Both can be single objects OR arrays of objects.
       const normalise = (raw) => {
         if (!raw || typeof raw !== 'object') return null;
-        // Style A — already has pattern+execute
         if (raw.pattern && raw.execute) return raw;
-        // Style B — has command+handler
         if ((raw.command || raw.pattern) && (raw.handler || raw.execute)) {
           const pattern = raw.command || raw.pattern;
           const execute = raw.handler
             ? async (conn, msg, m, opts) => {
-                // Bridge: call handler(sock, message, args, context)
                 const context = {
                   chatId: opts.from,
                   command: pattern,
                   config: {
                     BOT_NAME, OWNER_NAME, OWNER_NUM, PREFIX,
                     BOT_MODE: global.BOT_MODE, CO_OWNER, CO_OWNER_NUM,
+                    platform: detectPlatform(),
                   },
                   deployId: DEPLOY_ID,
                   channelInfo: {
@@ -198,7 +191,6 @@ const loadPlugins = () => {
       if (Array.isArray(mod)) {
         mod.forEach(reg);
       } else if (mod && typeof mod === 'object') {
-        // Could be single plugin or object of plugins
         const n = normalise(mod);
         if (n) {
           reg(mod);
@@ -209,12 +201,13 @@ const loadPlugins = () => {
     } catch(e){ console.error(`Plugin ${file}: ${e.message?.slice(0,120)}`); }
   }
   console.log(`🔌 ${cmdCount} commands loaded from ${files.length} plugin files`);
+  global.botCommands = commands; // expose for plugins like allmenu.js
 };
 loadPlugins();
 if (fs.existsSync(pluginsDir)) fs.watch(pluginsDir,(e,f)=>{ if(f&&f.endsWith('.js')){ console.log(`♻️ Reloading ${f}`); loadPlugins(); } });
 
 // ════════════════════════════════════════════════════════════
-//  initConnection — Arslan MD per-number architecture
+//  initConnection — per-number session manager
 // ════════════════════════════════════════════════════════════
 async function initConnection(number) {
   const sessionDir = path.join(SESSIONS_DIR, number);
@@ -246,7 +239,7 @@ async function initConnection(number) {
 }
 
 // ════════════════════════════════════════════════════════════
-//  setupHandlers — exact Arslan MD sequence
+//  setupHandlers — all event listeners
 // ════════════════════════════════════════════════════════════
 function setupHandlers(conn, number, saveCreds) {
   const entry = activeConnections.get(number);
@@ -333,7 +326,7 @@ function setupHandlers(conn, number, saveCreds) {
 }
 
 // ════════════════════════════════════════════════════════════
-//  PROFESSIONAL WELCOME (Arslan MD style)
+//  PROFESSIONAL WELCOME
 // ════════════════════════════════════════════════════════════
 async function sendWelcome(conn, number) {
   const userJid = `${number}@s.whatsapp.net`;
@@ -386,14 +379,30 @@ _ᴘᴏᴡᴇʀᴇᴅ ʙʏ ʀᴇᴅxʙᴏᴛ302_
 }
 
 // ════════════════════════════════════════════════════════════
+//  HELPER: Permission checks
+// ════════════════════════════════════════════════════════════
+function isOwnerNumber(number) {
+  const num = number.replace(/[^0-9]/g,'');
+  return num === OWNER_NUM || num === CO_OWNER_NUM || SUDO_USERS.includes(num);
+}
+
+function isPairedNumber(number) {
+  const num = number.replace(/[^0-9]/g,'');
+  // Has ever paired (deploys registry) OR currently has active connection
+  return (deploys[DEPLOY_ID]?.numbers?.includes(num) || activeConnections.has(num));
+}
+
+// ════════════════════════════════════════════════════════════
 //  MESSAGE HANDLER
 // ════════════════════════════════════════════════════════════
 async function handleMessage(conn, msg, sessionId) {
   const from    = msg.key.remoteJid;
   const sender  = msg.key.participant || msg.key.remoteJid;
   const sNum    = sender.split('@')[0].split(':')[0];
-  const isOwner = sNum === OWNER_NUM || sNum === CO_OWNER_NUM || sNum === sessionId;
+  const isOwner = isOwnerNumber(sNum);
+  const isPaired = isPairedNumber(sNum);
 
+  // Status messages: always auto‑view/react if enabled
   if (from === 'status@broadcast') {
     if (process.env.AUTO_STATUS_SEEN !== 'false') await conn.readMessages([msg.key]).catch(()=>{});
     if (process.env.AUTO_STATUS_REACT !== 'false') {
@@ -404,7 +413,18 @@ async function handleMessage(conn, msg, sessionId) {
   }
   if (from?.endsWith('@newsletter')) return;
   if (!msg.message) return;
+
+  // Mode check
   if (global.BOT_MODE === 'private' && !isOwner) return;
+
+  // Allow only paired users (or owners) to use commands
+  if (!isOwner && !isPaired) {
+    // Optional: send a message once per user? But to avoid spam, just ignore.
+    // We'll send a gentle reminder once per conversation.
+    // But to keep clean, we can ignore silently.
+    // For now, we ignore unpaired users entirely.
+    return;
+  }
 
   const body = msg.message?.conversation
     || msg.message?.extendedTextMessage?.text
@@ -419,12 +439,19 @@ async function handleMessage(conn, msg, sessionId) {
   const cmd  = args.shift().toLowerCase();
   const q    = body.slice(pfx.length + cmd.length).trim();
 
-  console.log(`[${new Date().toLocaleTimeString()}] ${pfx}${cmd} | ${sNum}`);
+  console.log(`[${new Date().toLocaleTimeString()}] ${pfx}${cmd} | ${sNum} (owner:${isOwner}, paired:${isPaired})`);
 
-  if (await runBuiltIn(conn, msg, cmd, args, q, from, sender, isOwner, pfx)) return;
+  // Built‑in commands (owner‑only or paired‑only)
+  if (await runBuiltIn(conn, msg, cmd, args, q, from, sender, isOwner, isPaired, pfx)) return;
 
+  // Plugin commands
   if (commands.has(cmd)) {
     const plugin = commands.get(cmd);
+    // Owner‑only check
+    if (plugin.ownerOnly && !isOwner) {
+      await conn.sendMessage(from, { text: '❌ This command is only for the bot owner.' }, { quoted: msg });
+      return;
+    }
     try {
       const reply   = (text, opts={}) => conn.sendMessage(from,{text},{quoted:msg,...opts});
       const isGroup = from.endsWith('@g.us');
@@ -433,13 +460,22 @@ async function handleMessage(conn, msg, sessionId) {
       let isAdmin = false;
       if (isGroup && gMeta) { const p = gMeta.participants.find(p=>p.id===sender); isAdmin = p?.admin==='admin'||p?.admin==='superadmin'; }
       const quoted = getQuoted(msg);
-      // Pass full opts — the normalise() bridge in loadPlugins uses these for new-style plugins
       const pluginOpts = {
         args, q, reply, from, isGroup, groupMetadata: gMeta,
         sender, isAdmin, isOwner, botName: BOT_NAME, ownerName: OWNER_NAME,
-        prefix: pfx, senderNumber: sNum,
-        // new-style context fields (used directly by bridge)
+        prefix: pfx, senderNumber: sNum, isPaired,
         chatId: from, deployId: DEPLOY_ID,
+        config: {
+          botName: BOT_NAME, ownerName: OWNER_NAME, ownerNumber: OWNER_NUM,
+          coOwner: CO_OWNER, coOwnerNumber: CO_OWNER_NUM,
+          prefix: pfx, mode: global.BOT_MODE, platform: detectPlatform(),
+        },
+        channelInfo: {
+          contextInfo: {
+            forwardingScore: 999, isForwarded: true,
+            forwardedNewsletterMessageInfo: { newsletterJid: NL_JID, newsletterName: NL_NAME, serverMessageId: -1 },
+          },
+        },
       };
       await plugin.execute(conn, msg, {
         mentionedJid: msg.message?.extendedTextMessage?.contextInfo?.mentionedJid||[],
@@ -451,11 +487,11 @@ async function handleMessage(conn, msg, sessionId) {
 }
 
 // ════════════════════════════════════════════════════════════
-//  BUILT-IN COMMANDS — Professional Arslan MD style
+//  BUILT‑IN COMMANDS (respect permissions)
 // ════════════════════════════════════════════════════════════
 const fakevCard = require('./lib/fakevcard');
 
-async function runBuiltIn(conn, msg, cmd, args, q, from, sender, isOwner, pfx) {
+async function runBuiltIn(conn, msg, cmd, args, q, from, sender, isOwner, isPaired, pfx) {
   const dep = deploys[DEPLOY_ID];
   const nlCtx = {
     forwardingScore: 999, isForwarded: true,
@@ -465,33 +501,21 @@ async function runBuiltIn(conn, msg, cmd, args, q, from, sender, isOwner, pfx) {
   const s = text => conn.sendMessage(from, { text, contextInfo: nlCtx }, { quoted: fakevCard });
 
   switch(cmd) {
-    case 'ping': case 'speed': {
+    case 'ping':
+    case 'speed':
       const t = Date.now();
       await conn.sendMessage(from, { react: { text: '⚡', key: msg.key } });
       await s(`⚡ *ᴘɪɴɢ:* \`${Date.now()-t}ms\`\n\n> 🔥 ${BOT_NAME}`);
       return true;
-    }
 
-    case 'menu': case 'help': case 'm': {
-      await conn.sendMessage(from, {
-        image: { url: BOT_IMG },
-        caption: buildMenu(pfx),
-        contextInfo: { ...nlCtx,
-          externalAdReply: { title: `🔮 ᴄᴍᴅ ᴍᴇɴᴜ`, body: `${BOT_NAME} — ᴀʟʟ ᴄᴍᴅs`, thumbnailUrl: BOT_IMG, sourceUrl: REPO_LINK, mediaType: 1, renderLargerThumbnail: true },
-        },
-      }, { quoted: fakevCard });
-      return true;
-    }
-
-    case 'owner': {
+    case 'owner':
       await conn.sendMessage(from, {
         contacts: { displayName: OWNER_NAME, contacts: [{ vcard: `BEGIN:VCARD\nVERSION:3.0\nFN:${OWNER_NAME}\nTEL;type=CELL;waid=${OWNER_NUM}:+${OWNER_NUM}\nEND:VCARD` }] }
       }, { quoted: fakevCard });
-      await s(`👑 *ᴏᴡɴᴇʀ:* ${OWNER_NAME}\n📱 *ɴᴜᴍ:* +${OWNER_NUM}\n👤 *ᴄᴏ:* ${CO_OWNER}\n\n> 🔥 ${BOT_NAME}`);
+      await s(`👑 *ᴏᴡɴᴇʀ:* ${OWNER_NAME}\n📱 *ɴᴜᴍ:* +${OWNER_NUM}\n👤 *ᴄᴏ:* ${CO_OWNER}\n🛡️ *Sudo:* ${SUDO_USERS.join(', ') || 'none'}\n\n> 🔥 ${BOT_NAME}`);
       return true;
-    }
 
-    case 'mode': {
+    case 'mode':
       if (!isOwner) { await s('❌ Owner only.'); return true; }
       const m = args[0]?.toLowerCase();
       if (m==='public'||m==='private') {
@@ -501,26 +525,25 @@ async function runBuiltIn(conn, msg, cmd, args, q, from, sender, isOwner, pfx) {
         await s(`✅ *ᴍᴏᴅᴇ:* \`${m.toUpperCase()}\`\n\n> 🔥 ${BOT_NAME}`);
       } else await s(`📌 *ᴄᴜʀʀᴇɴᴛ ᴍᴏᴅᴇ:* \`${global.BOT_MODE.toUpperCase()}\`\n\n💡 Use: \`${pfx}mode public\` | \`${pfx}mode private\``);
       return true;
-    }
 
-    case 'deployid': case 'myid': {
+    case 'deployid':
+    case 'myid':
       await s(`🆔 *ᴅᴇᴘʟᴏʏ ɪᴅ:* \`${DEPLOY_ID}\`\n🔑 *ᴋᴇʏ:* \`${dep?.deployKey||'—'}\`\n🌐 *ᴘʟᴀᴛᴇ:* ${detectPlatform()}\n\n> 🔥 ${BOT_NAME}`);
       return true;
-    }
 
-    case 'runtime': case 'uptime': {
+    case 'runtime':
+    case 'uptime':
       const up = Math.floor((Date.now()-START_TIME)/1000);
-      const h=Math.floor(up/3600),m2=Math.floor((up%3600)/60),s2=up%60;
+      const h=Math.floor(up/3600), m2=Math.floor((up%3600)/60), s2=up%60;
       await s(`⏱️ *ʀᴜɴᴛɪᴍᴇ:* \`${h}h ${m2}m ${s2}s\`\n📦 *ᴄᴍᴅs:* ${cmdCount+8}+\n🌍 *ᴍᴏᴅᴇ:* ${global.BOT_MODE.toUpperCase()}\n\n> 🔥 ${BOT_NAME}`);
       return true;
-    }
 
-    case 'restart': case 'shutdown': {
+    case 'restart':
+    case 'shutdown':
       if (!isOwner) { await s('❌ Owner only.'); return true; }
       await s('🔄 *Restarting...*\n\n> 🔥 '+BOT_NAME);
       setTimeout(()=>process.exit(0),2000);
       return true;
-    }
 
     default: return false;
   }
@@ -533,126 +556,33 @@ function getQuoted(msg) {
 }
 
 // ════════════════════════════════════════════════════════════
-//  PROFESSIONAL MENU (Arslan MD style)
-// ════════════════════════════════════════════════════════════
-function buildMenu(pfx) {
-  const cats = {};
-  for (const [n,c] of commands) {
-    const cat = (c.category||'other').toUpperCase();
-    if (!cats[cat]) cats[cat] = new Set();
-    cats[cat].add(n);
-  }
-  // Built-ins
-  const builtins = { UTILITY: new Set(['ping','speed','menu','owner','mode','deployid','runtime','restart']) };
-  for (const [cat, cmds] of Object.entries(builtins)) {
-    if (!cats[cat]) cats[cat] = new Set();
-    for (const c of cmds) cats[cat].add(c);
-  }
-
-  const emojis = { AI:'🤖', DOWNLOADER:'📥', FUN:'🎯', GENERAL:'🌐', GROUP:'👥', STICKER:'🖼️', REACTION:'🙂', OTHER:'🧩', UTILITY:'🔧', CONVERT:'🔄', TOOLS:'⚙️' };
-  const pkt = new Date().toLocaleString('en-US',{timeZone:'Asia/Karachi'});
-  const dep = deploys[DEPLOY_ID];
-
-  let m = `
-╭━[ \`🤖 ${BOT_NAME}\` ]━⊷
-┆⚜️ *DEV:* _+${OWNER_NUM}_
-╰━━━━━━━━━━⊷
-
-  𓂀 *_𝕽𝖊𝖉𝖝𝕭𝖔𝖙𝟑𝟎𝟐_* 𓂀
-
- ✒️  ᴘʀᴇꜰɪx :☛ ${pfx}
- 👑  ᴏᴡɴᴇʀ  :☛ ${OWNER_NAME}
- 📊  ᴛᴏᴛᴀʟ  :☛ ${cmdCount+8}+ ᴄᴍᴅs
- 🌍  ᴍᴏᴅᴇ   :☛ ${global.BOT_MODE.toUpperCase()}
- ⏰  ᴛɪᴍᴇ   :☛ ${pkt}
-
-> 💫 *ᴍᴇɴᴜ ɴᴀᴠɪɢᴀᴛɪᴏɴ*
-`.trimStart();
-
-  const order = ['AI','DOWNLOADER','STICKER','REACTION','FUN','GROUP','UTILITY','GENERAL','CONVERT','TOOLS','OTHER'];
-  for (const catId of order) {
-    const cmds = cats[catId];
-    if (!cmds || cmds.size === 0) continue;
-    const emoji = emojis[catId] || '📂';
-    const name  = catId.toLowerCase();
-    m += `\n╭═✦[ \`☛ ᴄᴍᴅs ʟɪsᴛ\`\n> ${emoji} *${name}*:\n`;
-    [...cmds].sort().forEach(c => { m += `║ ￫ ${pfx}${c}\n`; });
-    m += `╰━⊷\n`;
-  }
-
-  m += `\n💡 *ᴛɪᴘ:* Use ${pfx} before commands\n\n> 🚀 ᴘᴏᴡᴇʀᴇᴅ ʙʏ ʀᴇᴅxʙᴏᴛ302`;
-  return m;
-}
-
-// ════════════════════════════════════════════════════════════
-//  RELOAD EXISTING SESSIONS ON STARTUP (Arslan MD style)
-// ════════════════════════════════════════════════════════════
-async function reloadExistingSessions() {
-  console.log('🔄 Checking existing sessions...');
-  if (!fs.existsSync(SESSIONS_DIR)) return;
-  const dirs = fs.readdirSync(SESSIONS_DIR).filter(d => {
-    try { return fs.statSync(path.join(SESSIONS_DIR,d)).isDirectory(); } catch { return false; }
-  });
-  console.log(`📂 Found ${dirs.length} session(s)`);
-  for (const num of dirs) {
-    if (fs.existsSync(path.join(SESSIONS_DIR,num,'creds.json'))) {
-      console.log(`🔄 Reloading: ${num}`);
-      try { await initConnection(num); } catch(e){ console.error(`Reload ${num}: ${e.message}`); }
-    }
-  }
-  broadcastStats();
-  console.log('✅ Session reload done');
-}
-
-// ── HELPERS ───────────────────────────────────────────────────
-const getActiveNumber = () => { for(const[n,e]of activeConnections){if(e.connected)return n;} return ''; };
-const hasSession = () => {
-  if (!fs.existsSync(SESSIONS_DIR)) return false;
-  try { return fs.readdirSync(SESSIONS_DIR).some(d => fs.existsSync(path.join(SESSIONS_DIR,d,'creds.json'))); } catch { return false; }
-};
-const getStats = () => ({
-  connected:     [...activeConnections.values()].some(e=>e.connected),
-  activeSockets: [...activeConnections.values()].filter(e=>e.connected).length,
-  botNumber:     getActiveNumber(),
-  commands:      cmdCount+8,
-  totalUsers:    statsData.totalUsers,
-  pairCount:     statsData.pairCount,
-  uptime:        Math.floor((Date.now()-START_TIME)/1000),
-  mode:          global.BOT_MODE,
-  deployId:      DEPLOY_ID,
-  platform:      detectPlatform(),
-  hasSession:    hasSession(),
-  botName:       deploys[DEPLOY_ID]?.botName || BOT_NAME,
-  ownerName:     deploys[DEPLOY_ID]?.ownerName || OWNER_NAME,
-  prefix:        deploys[DEPLOY_ID]?.prefix || PREFIX,
-});
-
-// ════════════════════════════════════════════════════════════
-//  DEPLOY KEY MIDDLEWARE — user auth
-// ════════════════════════════════════════════════════════════
-function deployKeyAuth(req, res, next) {
-  const key = req.headers['x-deploy-key'] || req.body?.deployKey || req.query?.key;
-  if (!key) return res.status(401).json({ error: 'Deploy key required' });
-  // Find which deploy this key belongs to
-  const dep = Object.values(deploys).find(d => d.deployKey === key);
-  if (!dep) return res.status(401).json({ error: 'Invalid deploy key' });
-  req.deploy = dep;
-  next();
-}
-
-// ════════════════════════════════════════════════════════════
-//  EXPRESS ROUTES — PUBLIC
+//  EXPRESS ROUTES — PUBLIC (unchanged)
 // ════════════════════════════════════════════════════════════
 app.get('/', (req,res)=>res.sendFile(path.join(__dirname,'public','index.html')));
-app.get('/api/status', (req,res)=>res.json(getStats()));
+app.get('/api/status', (req,res)=>res.json({
+  connected: [...activeConnections.values()].some(e=>e.connected),
+  activeSockets: [...activeConnections.values()].filter(e=>e.connected).length,
+  botNumber: (()=>{ for(const[n,e]of activeConnections) if(e.connected) return n; return ''; })(),
+  commands: cmdCount+8,
+  totalUsers: statsData.totalUsers,
+  pairCount: statsData.pairCount,
+  uptime: Math.floor((Date.now()-START_TIME)/1000),
+  mode: global.BOT_MODE,
+  deployId: DEPLOY_ID,
+  platform: detectPlatform(),
+  hasSession: (()=>{ try{ return fs.readdirSync(SESSIONS_DIR).some(d=>fs.existsSync(path.join(SESSIONS_DIR,d,'creds.json'))); }catch{return false;} })(),
+  botName: deploys[DEPLOY_ID]?.botName || BOT_NAME,
+  ownerName: deploys[DEPLOY_ID]?.ownerName || OWNER_NAME,
+  prefix: deploys[DEPLOY_ID]?.prefix || PREFIX,
+}));
 app.get('/api/config', (req,res)=>res.json({
   botName: BOT_NAME, ownerName: OWNER_NAME, coOwner: CO_OWNER,
   prefix: PREFIX, menuImage: BOT_IMG, repoLink: REPO_LINK,
   waGroup: WA_GROUP, tgGroup: TG_GROUP,
-  hasSession: hasSession(), deployId: DEPLOY_ID, platform: detectPlatform(),
+  hasSession: (()=>{ try{ return fs.readdirSync(SESSIONS_DIR).some(d=>fs.existsSync(path.join(SESSIONS_DIR,d,'creds.json'))); }catch{return false;} })(),
+  deployId: DEPLOY_ID, platform: detectPlatform(),
 }));
 
-// ── PAIR ──────────────────────────────────────────────────────
 app.post('/api/pair', async (req, res) => {
   let conn;
   try {
@@ -696,7 +626,6 @@ app.post('/api/pair', async (req, res) => {
     activeConnections.set(num, { conn, saveCreds, connected: false, hasWelcomed: false, reconnectAttempts: 0 });
     setupHandlers(conn, num, saveCreds);
 
-    // Arslan MD: wait 3s before requesting code
     await new Promise(r=>setTimeout(r,3000));
 
     const rawCode = await conn.requestPairingCode(num);
@@ -713,7 +642,6 @@ app.post('/api/pair', async (req, res) => {
   }
 });
 
-// ── LOGOUT ───────────────────────────────────────────────────
 app.post('/api/logout', async (req,res) => {
   try {
     const { number } = req.body;
@@ -736,7 +664,6 @@ app.post('/api/logout', async (req,res) => {
 
 app.post('/api/reload',(req,res)=>{ loadPlugins(); res.json({success:true,commands:cmdCount}); });
 
-// Deploy ID public lookup (safe — no key exposed)
 app.get('/api/deploy/:id',(req,res)=>{
   const id=req.params.id.toUpperCase(); const d=deploys[id];
   if(!d)return res.status(404).json({error:'Deploy ID not found'});
@@ -744,10 +671,17 @@ app.get('/api/deploy/:id',(req,res)=>{
 });
 
 // ════════════════════════════════════════════════════════════
-//  USER DEPLOY KEY API — users manage THEIR OWN deploy only
+//  USER DEPLOY KEY API (unchanged)
 // ════════════════════════════════════════════════════════════
+function deployKeyAuth(req, res, next) {
+  const key = req.headers['x-deploy-key'] || req.body?.deployKey || req.query?.key;
+  if (!key) return res.status(401).json({ error: 'Deploy key required' });
+  const dep = Object.values(deploys).find(d => d.deployKey === key);
+  if (!dep) return res.status(401).json({ error: 'Invalid deploy key' });
+  req.deploy = dep;
+  next();
+}
 
-// Get my deploy info by key
 app.post('/api/user/info', deployKeyAuth, (req,res) => {
   const d = req.deploy;
   res.json({
@@ -758,11 +692,10 @@ app.post('/api/user/info', deployKeyAuth, (req,res) => {
   });
 });
 
-// Update my deploy env/settings by key
 app.post('/api/user/update', deployKeyAuth, (req,res) => {
   const d = req.deploy;
   const { botName, ownerName, prefix, mode } = req.body;
-  if (botName)   { d.botName   = botName;   if (d.id === DEPLOY_ID) {} } // Could update process.env too
+  if (botName)   { d.botName   = botName;   }
   if (ownerName) { d.ownerName = ownerName; }
   if (prefix)    { d.prefix    = prefix;    }
   if (mode && (mode==='public'||mode==='private')) {
@@ -773,7 +706,6 @@ app.post('/api/user/update', deployKeyAuth, (req,res) => {
   res.json({ success: true, deploy: { id:d.id, botName:d.botName, ownerName:d.ownerName, prefix:d.prefix, mode:d.mode } });
 });
 
-// Logout by key (user can reset their own bot)
 app.post('/api/user/logout', deployKeyAuth, async (req,res) => {
   const d = req.deploy;
   let count = 0;
@@ -791,13 +723,12 @@ app.post('/api/user/logout', deployKeyAuth, async (req,res) => {
   res.json({ success: true, message: `Logged out ${count} session(s)` });
 });
 
-// Get bot status by key
 app.get('/api/user/status', deployKeyAuth, (req,res) => {
   res.json({ ...getStats(), deployKey: '***hidden***' });
 });
 
 // ════════════════════════════════════════════════════════════
-//  ADMIN ROUTES
+//  ADMIN ROUTES (unchanged)
 // ════════════════════════════════════════════════════════════
 const adminAuth = (req,res,next) => {
   const token = req.headers['x-admin-token']||req.query.token;
@@ -819,10 +750,9 @@ app.post('/api/admin/logout',adminAuth,(req,res)=>{ adminSessions.delete(req.hea
 app.get('/api/admin/overview',adminAuth,(req,res)=>res.json({
   stats:{ totalDeploys:Object.keys(deploys).length, totalPairs:statsData.pairCount, totalUsers:statsData.totalUsers, uptime:Math.floor((Date.now()-START_TIME)/1000) },
   currentDeploy: deploys[DEPLOY_ID], servers, platform:detectPlatform(),
-  adminUser:req.adminSession.user, botVersion:'5.0.0', nodeVersion:process.version, memUsage:process.memoryUsage(), activeConnections:activeConnections.size,
+  adminUser:req.adminSession.user, botVersion:'5.1.0', nodeVersion:process.version, memUsage:process.memoryUsage(), activeConnections:activeConnections.size,
 }));
 
-// Admin: see ALL deploys including their keys
 app.get('/api/admin/deploys',adminAuth,(req,res)=>res.json({deploys:Object.values(deploys)}));
 app.delete('/api/admin/deploys/:id',adminAuth,(req,res)=>{
   const id=req.params.id.toUpperCase();
@@ -884,19 +814,16 @@ process.on('SIGTERM',()=>gracefulShutdown('SIGTERM'));
 process.on('uncaughtException',err=>console.error('uncaughtException:',err.message));
 process.on('unhandledRejection',err=>console.error('unhandledRejection:',err));
 
-// ════════════════════════════════════════════════════════════
-//  KEEP-ALIVE — prevents Heroku/Render free-tier sleep
-// ════════════════════════════════════════════════════════════
+// ── KEEP-ALIVE ────────────────────────────────────────────────
 const APP_URL = process.env.APP_URL || process.env.HEROKU_APP_DEFAULT_DOMAIN_NAME
   ? `https://${process.env.HEROKU_APP_DEFAULT_DOMAIN_NAME}`
   : null;
-
 function startKeepAlive() {
   const url = APP_URL || process.env.RAILWAY_PUBLIC_DOMAIN
     ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`
     : null;
-  if (!url) return; // local dev — no need
-  const interval = 25 * 60 * 1000; // every 25 minutes
+  if (!url) return;
+  const interval = 25 * 60 * 1000;
   setInterval(() => {
     try {
       const https = require('https');
@@ -909,8 +836,6 @@ function startKeepAlive() {
   }, interval);
   console.log(`💓 Keep-alive enabled → ${url}`);
 }
-
-// Health endpoint (used by keep-alive + Heroku health check)
 app.get('/health', (req, res) => res.json({
   ok: true,
   uptime: Math.floor((Date.now() - START_TIME) / 1000),
@@ -922,15 +847,51 @@ app.get('/health', (req, res) => res.json({
 // ── START ─────────────────────────────────────────────────────
 server.listen(PORT, async () => {
   console.log(`\n╔════════════════════════════════════════════════════╗`);
-  console.log(`║  🔥 REDXBOT302 FINAL EDITION v5.0                  ║`);
+  console.log(`║  🔥 REDXBOT302 FINAL EDITION v5.1                  ║`);
   console.log(`║  🌐 http://localhost:${String(PORT).padEnd(26)}║`);
   console.log(`║  🆔 Deploy ID: ${String(DEPLOY_ID).padEnd(34)}║`);
   console.log(`║  🔑 Deploy Key: ${String(deploys[DEPLOY_ID]?.deployKey||'—').slice(0,20).padEnd(33)}║`);
   console.log(`║  🌐 Platform:  ${String(detectPlatform()).padEnd(34)}║`);
   console.log(`║  🔌 Commands:  ${String(cmdCount+'+ loaded').padEnd(34)}║`);
+  console.log(`║  👑 Owner:     ${OWNER_NUM} / ${CO_OWNER_NUM}                ║`);
+  console.log(`║  🛡️ Sudo:      ${SUDO_USERS.join(', ') || 'none'}                ║`);
   console.log(`╚════════════════════════════════════════════════════╝\n`);
   await reloadExistingSessions();
   startKeepAlive();
 });
 
-module.exports = { app, server, io };
+async function reloadExistingSessions() {
+  console.log('🔄 Checking existing sessions...');
+  if (!fs.existsSync(SESSIONS_DIR)) return;
+  const dirs = fs.readdirSync(SESSIONS_DIR).filter(d => {
+    try { return fs.statSync(path.join(SESSIONS_DIR,d)).isDirectory(); } catch { return false; }
+  });
+  console.log(`📂 Found ${dirs.length} session(s)`);
+  for (const num of dirs) {
+    if (fs.existsSync(path.join(SESSIONS_DIR,num,'creds.json'))) {
+      console.log(`🔄 Reloading: ${num}`);
+      try { await initConnection(num); } catch(e){ console.error(`Reload ${num}: ${e.message}`); }
+    }
+  }
+  broadcastStats();
+  console.log('✅ Session reload done');
+}
+
+function getStats() {
+  return {
+    connected: [...activeConnections.values()].some(e=>e.connected),
+    activeSockets: [...activeConnections.values()].filter(e=>e.connected).length,
+    botNumber: (()=>{ for(const[n,e]of activeConnections) if(e.connected) return n; return ''; })(),
+    commands: cmdCount+8,
+    totalUsers: statsData.totalUsers,
+    pairCount: statsData.pairCount,
+    uptime: Math.floor((Date.now()-START_TIME)/1000),
+    mode: global.BOT_MODE,
+    deployId: DEPLOY_ID,
+    platform: detectPlatform(),
+    hasSession: (()=>{ try{ return fs.readdirSync(SESSIONS_DIR).some(d=>fs.existsSync(path.join(SESSIONS_DIR,d,'creds.json'))); }catch{return false;} })(),
+    botName: deploys[DEPLOY_ID]?.botName || BOT_NAME,
+    ownerName: deploys[DEPLOY_ID]?.ownerName || OWNER_NAME,
+    prefix: deploys[DEPLOY_ID]?.prefix || PREFIX,
+  };
+}
