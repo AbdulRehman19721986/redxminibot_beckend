@@ -1,127 +1,246 @@
-/*****************************************************************************
- *                                                                           *
- *                     Developed By Abdul Rehman Rajpoot                     *
- *                     & Muzamil Khan                                        *
- *                                                                           *
- *  🌐  GitHub   : https://github.com/AbdulRehman19721986/redxbot302          *
- *  ▶️  YouTube  : https://youtube.com/@rootmindtech                         *
- *  💬  WhatsApp : https://whatsapp.com/channel/0029VbCPnYf96H4SNehkev10     *
- *  🔗  Telegram : https://t.me/TeamRedxhacker2                              *
- *                                                                           *
- *    © 2026 Abdul Rehman Rajpoot. All rights reserved.                      *
- *                                                                           *
- *****************************************************************************/
-
+// === ai-commands.js ===
+const { fetchJson } = require('../lib/functions2');
+const { fakevCard } = require('../lib/fakevcard');
 const axios = require('axios');
+const FormData = require('form-data');
 
-function getCommandName(message) {
-    const text = message.message?.conversation ||
-                 message.message?.extendedTextMessage?.text ||
-                 '';
-    if (text.startsWith('.')) {
-        return text.split(' ')[0].substring(1).toLowerCase();
-    }
-    return '';
-}
-
-module.exports = {
-    command: 'ai',
-    aliases: ['gpt', 'llama', 'mistral', 'gemini'],
-    category: 'ai',
-    description: 'Ask a question to various AI models',
-    usage: '.gpt <question>  or  .gemini <question>  or  .llama <question>  etc.',
-
-    async handler(sock, message, args, context = {}) {
-        const chatId = context.chatId || message.key.remoteJid;
-        const query = args.join(' ').trim();
-
-        if (!query) {
-            return await sock.sendMessage(chatId, {
-                text: `❌ Please provide a query.\n\nExample: .gpt Write a basic HTML page`
-            }, { quoted: message });
+module.exports = [
+  {
+    pattern: "fluxai",
+    desc: "Generate an image using AI",
+    category: "ai",
+    react: "🖼️",
+    filename: __filename,
+    use: ".fluxai prompt",
+    execute: async (conn, mek, m, { from, args, reply }) => {
+      try {
+        if (!args.length) {
+          return reply("❌ Please provide a prompt for the image. Example: .fluxai a serene beach at sunset");
         }
 
-        const usedCommand = context.command || getCommandName(message);
-        const model = usedCommand === 'gpt' || usedCommand === 'ai' ? 'gpt' :
-                      usedCommand === 'gemini' ? 'gemini' :
-                      usedCommand === 'llama' ? 'llama' :
-                      usedCommand === 'mistral' ? 'mistral' : 'gpt';
+        const prompt = args.join(" ");
+        const apiUrl = `https://api.siputzx.my.id/api/ai/flux?prompt=${encodeURIComponent(prompt)}`;
+        const result = await fetchJson(apiUrl);
 
-        try {
-            await sock.sendMessage(chatId, {
-                react: { text: '🤖', key: message.key }
-            });
-
-            let answer = '';
-
-            if (model === 'gemini') {
-                const geminiAPIs = [
-                    `https://vapis.my.id/api/gemini?q=${encodeURIComponent(query)}`,
-                    `https://api.siputzx.my.id/api/ai/gemini-pro?content=${encodeURIComponent(query)}`,
-                    `https://api.ryzendesu.vip/api/ai/gemini?text=${encodeURIComponent(query)}`,
-                    `https://api.agatz.xyz/api/gemini?message=${encodeURIComponent(query)}`,
-                    `https://api.giftedtech.my.id/api/ai/geminiaipro?apikey=gifted&q=${encodeURIComponent(query)}`
-                ];
-                for (const api of geminiAPIs) {
-                    try {
-                        const { data } = await axios.get(api, { timeout: 10000 });
-                        answer = data.data?.candidates?.[0]?.content?.parts?.[0]?.text ||
-                                 data.answer || data.message || data.result || data.response ||
-                                 (typeof data === 'string' ? data : null);
-                        if (answer) break;
-                    } catch (e) { /* ignore */ }
-                }
-            } else if (model === 'llama') {
-                const llamaAPIs = [
-                    `https://llama.gtech-apiz.workers.dev/?apikey=Suhail&text=${encodeURIComponent(query)}`,
-                    `https://api.giftedtech.my.id/api/ai/llama3?apikey=gifted&q=${encodeURIComponent(query)}`,
-                    `https://api.agatz.xyz/api/llama?message=${encodeURIComponent(query)}`
-                ];
-                for (const api of llamaAPIs) {
-                    try {
-                        const { data } = await axios.get(api, { timeout: 10000 });
-                        answer = data.data?.response || data.result || data.message || data.answer || data.response;
-                        if (answer) break;
-                    } catch (e) { /* ignore */ }
-                }
-            } else if (model === 'mistral') {
-                const mistralAPIs = [
-                    `https://mistral.gtech-apiz.workers.dev/?apikey=Suhail&text=${encodeURIComponent(query)}`,
-                    `https://api.giftedtech.my.id/api/ai/mistral?apikey=gifted&q=${encodeURIComponent(query)}`,
-                    `https://api.agatz.xyz/api/mistral?message=${encodeURIComponent(query)}`
-                ];
-                for (const api of mistralAPIs) {
-                    try {
-                        const { data } = await axios.get(api, { timeout: 10000 });
-                        answer = data.data?.response || data.result || data.message || data.answer || data.response;
-                        if (answer) break;
-                    } catch (e) { /* ignore */ }
-                }
-            } else { // gpt fallback
-                const gptAPIs = [
-                    `https://zellapi.autos/ai/chatbot?text=${encodeURIComponent(query)}`,
-                    `https://api.agatz.xyz/api/gpt?message=${encodeURIComponent(query)}`,
-                    `https://api.giftedtech.my.id/api/ai/gpt4?apikey=gifted&q=${encodeURIComponent(query)}`
-                ];
-                for (const api of gptAPIs) {
-                    try {
-                        const { data } = await axios.get(api, { timeout: 10000 });
-                        answer = data.result || data.message || data.data || data.answer ||
-                                 data.response || (typeof data === 'string' ? data : null);
-                        if (answer) break;
-                    } catch (e) { /* ignore */ }
-                }
-            }
-
-            if (!answer) throw new Error('All APIs failed');
-
-            await sock.sendMessage(chatId, { text: answer }, { quoted: message });
-
-        } catch (error) {
-            console.error('AI Command Error:', error);
-            await sock.sendMessage(chatId, {
-                text: '❌ Failed to get AI response. Please try again later.'
-            }, { quoted: message });
+        if (!result?.download_url) {
+          return reply("❌ Failed to generate image.");
         }
+
+        await conn.sendMessage(from, {
+          image: { url: result.download_url },
+          caption: "🖼️ Your AI-Generated Image"
+        }, { quoted: fakevCard });
+
+      } catch (e) {
+        return reply(`❌ Error: ${e.message}`);
+      }
     }
-};
+  },
+  {
+    pattern: "suno",
+    desc: "Generate AI music with Suno",
+    category: "ai",
+    react: "🎵",
+    filename: __filename,
+    use: ".suno prompt",
+    execute: async (conn, mek, m, { from, args, reply }) => {
+      try {
+        if (!args.length) {
+          return reply("❌ Please provide a prompt for the music. Example: .suno a happy pop song");
+        }
+
+        const prompt = args.join(" ");
+        const apiUrl = `https://api.privatezia.biz.id/api/ai/suno?query=${encodeURIComponent(prompt)}`;
+        const result = await fetchJson(apiUrl);
+
+        if (!result?.status || !result?.result?.data?.length) {
+          return reply("❌ Failed to generate music.");
+        }
+
+        const data = result.result.data[0];
+        const audioUrl = data.audio_url;
+        const imageUrl = data.image_url;
+        const title = data.title;
+
+        await conn.sendMessage(from, {
+          image: { url: imageUrl },
+          caption: `🎵 Your AI-Generated Music\nTitle: ${title}`
+        }, { quoted: fakevCard });
+
+        await conn.sendMessage(from, {
+          audio: { url: audioUrl },
+          mimetype: 'audio/mpeg',
+          fileName: `${title}.mp3`
+        }, { quoted: fakevCard });
+
+      } catch (e) {
+        return reply(`❌ Error: ${e.message}`);
+      }
+    }
+  },
+  {
+    pattern: "gpt4",
+    desc: "Generate text using GPT-4 AI",
+    category: "ai",
+    react: "🤖",
+    filename: __filename,
+    use: ".gpt4 prompt",
+    execute: async (conn, mek, m, { from, args, reply }) => {
+      try {
+        if (!args.length) {
+          return reply("❌ Please provide a prompt for GPT-4. Example: .gpt4 who is the first president of Indonesia?");
+        }
+
+        const prompt = args.join(" ");
+        const apiUrl = `https://api.privatezia.biz.id/api/ai/GPT-4?query=${encodeURIComponent(prompt)}`;
+        const result = await fetchJson(apiUrl);
+
+        if (!result?.status || !result?.response) {
+          return reply("❌ Failed to generate response.");
+        }
+
+        await conn.sendMessage(from, {
+          text: `🤖 Your GPT-4 Response\n\n${result.response}`
+        }, { quoted: fakevCard });
+
+      } catch (e) {
+        return reply(`❌ Error: ${e.message}`);
+      }
+    }
+  },
+  {
+    pattern: "luminai",
+    desc: "Generate text using LuminAI",
+    category: "ai",
+    react: "🤖",
+    filename: __filename,
+    use: ".luminai prompt",
+    execute: async (conn, mek, m, { from, args, reply }) => {
+      try {
+        if (!args.length) {
+          return reply("❌ Please provide a prompt for LuminAI. Example: .luminai hello");
+        }
+
+        const prompt = args.join(" ");
+        const apiUrl = `https://api.ziapanelku.my.id/ai/luminai?text=${encodeURIComponent(prompt)}`;
+        const result = await fetchJson(apiUrl);
+
+        if (!result?.status || !result?.result) {
+          return reply("❌ Failed to generate response.");
+        }
+
+        await conn.sendMessage(from, {
+          text: `🤖 Your LuminAI Response\n\n${result.result}`
+        }, { quoted: fakevCard });
+
+      } catch (e) {
+        return reply(`❌ Error: ${e.message}`);
+      }
+    }
+  },
+  {
+    pattern: "metaai",
+    desc: "Generate text using Meta AI",
+    category: "ai",
+    react: "🤖",
+    filename: __filename,
+    use: ".metaai prompt",
+    execute: async (conn, mek, m, { from, args, reply }) => {
+      try {
+        if (!args.length) {
+          return reply("❌ Please provide a prompt for Meta AI. Example: .metaai what is the capital of France?");
+        }
+
+        const prompt = args.join(" ");
+        const apiUrl = `https://apis.davidcyriltech.my.id/ai/metaai?text=${encodeURIComponent(prompt)}`;
+        const result = await fetchJson(apiUrl);
+
+        if (!result?.success || !result?.response) {
+          return reply("❌ Failed to generate response.");
+        }
+
+        await conn.sendMessage(from, {
+          text: `🤖 Your Meta AI Response\n\n${result.response}`
+        }, { quoted: fakevCard });
+
+      } catch (e) {
+        return reply(`❌ Error: ${e.message}`);
+      }
+    }
+  },
+  {
+    pattern: "artly",
+    desc: "Generate AI images with Artly",
+    category: "ai",
+    react: "🎨",
+    filename: __filename,
+    use: ".artly prompt",
+    execute: async (conn, mek, m, { from, args, reply }) => {
+      try {
+        if (!args.length) {
+          return reply("❌ Please provide a prompt for Artly. Example: .artly a cat with a hat");
+        }
+
+        const prompt = args.join(" ");
+        const form = new FormData();
+        form.append('prompt', prompt);
+        form.append('width', '512');
+        form.append('height', '512');
+        form.append('num_inference_steps', '25');
+
+        const response = await axios.post('https://getimg-x4mrsuupda-uc.a.run.app/api-premium', form, {
+          headers: {
+            'user-agent': 'NB Android/1.0.0',
+            'accept-encoding': 'gzip',
+            'content-type': 'application/x-www-form-urlencoded',
+            ...form.getHeaders()
+          }
+        });
+
+        const result = response.data;
+
+        if (!result?.url) {
+          return reply("❌ Failed to generate image.");
+        }
+
+        await conn.sendMessage(from, {
+          image: { url: result.url },
+          caption: `🎨 Your Artly Image\nSeed: ${result.seed}\nCost: ${result.cost}`
+        }, { quoted: fakevCard });
+
+      } catch (e) {
+        return reply(`❌ Error: ${e.message}`);
+      }
+    }
+  },
+  {
+    pattern: "aiclaude",
+    desc: "Get AI response from Claude API",
+    category: "ai",
+    react: "🤖",
+    filename: __filename,
+    use: ".aiclaude prompt",
+    execute: async (conn, mek, m, { from, args, reply }) => {
+      try {
+        if (!args.length) {
+          return reply("❌ Please provide a prompt for Claude. Example: .aiclaude tell me a story");
+        }
+
+        const prompt = args.join(" ");
+        const apiUrl = `https://api.ryzendesu.vip/api/ai/claude?text=${encodeURIComponent(prompt)}`;
+        const result = await fetchJson(apiUrl);
+
+        if (!result?.response) {
+          return reply("❌ Failed to generate response.");
+        }
+
+        await conn.sendMessage(from, {
+          text: `🤖 Your Claude Response\n\n${result.response}`
+        }, { quoted: fakevCard });
+
+      } catch (e) {
+        return reply(`❌ Error: ${e.message}`);
+      }
+    }
+  }
+];

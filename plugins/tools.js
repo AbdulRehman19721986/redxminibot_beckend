@@ -3,6 +3,7 @@
  * Category: tools
  */
 const axios = require('axios');
+const crypto = require('crypto');
 const cat = 'tools';
 const CH = {
   contextInfo: {

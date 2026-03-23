@@ -1,127 +1,143 @@
-/**
- * REDXBOT302 - Sticker Plugins
- * Category: sticker
- */
-const { downloadContentFromMessage } = require('@whiskeysockets/baileys');
-const fs = require('fs');
-const path = require('path');
-const { exec } = require('child_process');
-const cat = 'sticker';
-const CH = {
-  contextInfo: {
-    forwardingScore: 1, isForwarded: true,
-    forwardedNewsletterMessageInfo: {
-      newsletterJid: '120363405513439052@newsletter',
-      newsletterName: 'REDXBOT302', serverMessageId: -1
+const { downloadContentFromMessage } = require("@whiskeysockets/baileys");
+const { videoToWebp, imageToWebp } = require('../lib/video-utils');
+const { Sticker, StickerTypes } = require("wa-sticker-formatter");
+const axios = require('axios');
+const fakevCard = require('../lib/fakevcard');
+
+module.exports = {
+  pattern: "s",
+  desc: "Convert media to sticker with optional custom author name",
+  category: "sticker",
+  react: "🔄",
+  filename: __filename,
+  use: "<reply to media> [author name]",
+
+  execute: async (conn, message, m, { from, q, reply }) => {
+    const sendText = async (text, quoted = message) => {
+      return conn.sendMessage(from, { 
+        text,
+        contextInfo: {
+          forwardingScore: 999,
+          isForwarded: true,
+          forwardedNewsletterMessageInfo: {
+            newsletterJid: "120363348739987203@newsletter",
+            newsletterName: "❀༒★[ʀᴇᴅxʙᴏᴛ302]★༒❀",
+            serverMessageId: 200
+          }
+        }
+      }, { quoted: fakevCard });
+    };
+
+    try {
+      // Use default names if no custom name provided
+      const packName = "";
+      const authorName = q ? q.trim() : "REDXBOT302- LITE";
+
+      // Determine target message that contains media
+      const quotedMsg = message.message?.extendedTextMessage?.contextInfo?.quotedMessage;
+      const target = quotedMsg || message.message;
+
+      if (!target) {
+        return await sendText("*Please reply to an image/video/GIF or send .s as the caption of a media.*\n\n*Usage:* .s [author name]\n*Example:* .s redxbot302");
+      }
+
+      // Detect media type
+      let mediaNode = null;
+      let mediaType = null;
+      if (target.imageMessage) {
+        mediaNode = target.imageMessage;
+        mediaType = "image";
+      } else if (target.videoMessage) {
+        mediaNode = target.videoMessage;
+        mediaType = "video";
+      } else if (target.stickerMessage) {
+        mediaNode = target.stickerMessage;
+        mediaType = "sticker";
+      } else {
+        return await sendText("*Please reply to an image, video or sticker.*\n\n*Usage:* .s  name");
+      }
+
+      // React if configured
+      if (module.exports.react) {
+        try { 
+          await conn.sendMessage(from, { react: { text: module.exports.react, key: message.key } }); 
+        } catch (e) {}
+      }
+
+      // Download media
+      let buffer;
+      try {
+        const stream = await downloadContentFromMessage(mediaNode, mediaType);
+        let _buf = Buffer.from([]);
+        for await (const chunk of stream) {
+          _buf = Buffer.concat([_buf, chunk]);
+        }
+        buffer = _buf;
+      } catch (e) {
+        console.error("Download error:", e);
+        return await sendText("❌ Failed to download media. Try replying to a valid image/video/sticker.");
+      }
+
+      if (!buffer || buffer.length === 0) {
+        return await sendText("❌ Downloaded media is empty or too large.");
+      }
+
+      // If sticker already, just re-send it with custom metadata
+      if (mediaType === "sticker") {
+        try {
+          const sticker = new Sticker(buffer, {
+            pack: packName,
+            author: authorName,
+            type: StickerTypes.FULL,
+            quality: 75,
+            background: "transparent",
+          });
+          const out = await sticker.toBuffer();
+          return await conn.sendMessage(from, { sticker: out }, { quoted: message });
+        } catch (e) {
+          console.error("Sticker re-wrap error:", e);
+          return await conn.sendMessage(from, { sticker: buffer }, { quoted: fakevCard });
+        }
+      }
+
+      // Convert images/videos to webp
+      let webpBuffer;
+      try {
+        if (mediaType === "image") {
+          const convert = (typeof imageToWebp === "function") ? imageToWebp : videoToWebp;
+          webpBuffer = await convert(buffer);
+        } else {
+          webpBuffer = await videoToWebp(buffer);
+        }
+      } catch (e) {
+        console.error("Conversion error:", e);
+        return await sendText("❌ Failed to convert media to sticker. Make sure FFmpeg is installed.");
+      }
+
+      if (!webpBuffer || webpBuffer.length === 0) {
+        return await sendText("❌ Conversion produced empty output.");
+      }
+
+      // Create sticker with metadata
+      try {
+        const sticker = new Sticker(webpBuffer, {
+          pack: packName,
+          author: authorName,
+          type: StickerTypes.FULL,
+          quality: 75,
+          background: "transparent",
+        });
+        const out = await sticker.toBuffer();
+        await conn.sendMessage(from, { sticker: out }, { quoted: fakevCard });
+        
+      } catch (e) {
+        console.error("Sticker formatter error:", e);
+        await conn.sendMessage(from, { sticker: webpBuffer }, { quoted: fakevCard });
+      }
+
+    } catch (err) {
+      console.error("Sticker execution error:", err);
+      await sendText("❌ Sticker conversion failed.");
     }
   }
 };
-
-async function downloadMedia(message, type) {
-  try {
-    const m = message.message || {};
-    const quoted = m.extendedTextMessage?.contextInfo?.quotedMessage;
-    const media = m[`${type}Message`] || quoted?.[`${type}Message`];
-    if (!media) return null;
-    const stream = await downloadContentFromMessage(media, type);
-    const chunks = [];
-    for await (const c of stream) chunks.push(c);
-    return Buffer.concat(chunks);
-  } catch { return null; }
-}
-
-const plugins = [
-
-{
-  command: 'sticker', aliases: ['s', 'stiker', 'stic'], category: cat,
-  description: 'Convert image/video to sticker', usage: '.sticker (reply to image/video/gif)',
-  async handler(sock, message, args, context) {
-    const chatId = context.chatId || message.key.remoteJid;
-    await sock.sendMessage(chatId, { react: { text: '🎨', key: message.key } });
-
-    const m = message.message || {};
-    const quoted = m.extendedTextMessage?.contextInfo?.quotedMessage;
-
-    // Detect media type
-    const isImage = m.imageMessage || quoted?.imageMessage;
-    const isVideo = m.videoMessage || quoted?.videoMessage || m.stickerMessage || quoted?.stickerMessage;
-    const isGif = (m.videoMessage || quoted?.videoMessage)?.gifPlayback;
-
-    if (!isImage && !isVideo) {
-      return sock.sendMessage(chatId, { text: '❌ Reply to an image, video, or GIF with .sticker', ...CH }, { quoted: message });
-    }
-
-    const tmpDir = path.join(process.cwd(), 'tmp');
-    if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir, { recursive: true });
-    const id = Date.now();
-
-    try {
-      if (isImage) {
-        const imgBuf = await downloadMedia(message, 'image');
-        if (!imgBuf) return sock.sendMessage(chatId, { text: '❌ Failed to download image.', ...CH }, { quoted: message });
-        const inPath = path.join(tmpDir, `stk_${id}.jpg`);
-        const outPath = path.join(tmpDir, `stk_${id}.webp`);
-        fs.writeFileSync(inPath, imgBuf);
-        await new Promise((resolve, reject) => {
-          exec(`ffmpeg -y -i "${inPath}" -vf "scale=512:512:force_original_aspect_ratio=decrease,pad=512:512:(ow-iw)/2:(oh-ih)/2:color=0x00000000" "${outPath}"`, (err) => err ? reject(err) : resolve());
-        });
-        const stickerBuf = fs.readFileSync(outPath);
-        await sock.sendMessage(chatId, { sticker: stickerBuf }, { quoted: message });
-        try { fs.unlinkSync(inPath); fs.unlinkSync(outPath); } catch {}
-      } else {
-        const vidBuf = await downloadMedia(message, 'video');
-        if (!vidBuf) return sock.sendMessage(chatId, { text: '❌ Failed to download video.', ...CH }, { quoted: message });
-        const inPath = path.join(tmpDir, `stk_${id}.mp4`);
-        const outPath = path.join(tmpDir, `stk_${id}.webp`);
-        fs.writeFileSync(inPath, vidBuf);
-        await new Promise((resolve, reject) => {
-          exec(`ffmpeg -y -i "${inPath}" -vcodec libwebp -filter:v "scale=512:512:force_original_aspect_ratio=decrease,fps=15,pad=512:512:(ow-iw)/2:(oh-ih)/2:color=0x00000000" -loop 0 -ss 00:00:00.0 -t 00:00:05.0 -preset default -an -vsync 0 "${outPath}"`, (err) => err ? reject(err) : resolve());
-        });
-        const stickerBuf = fs.readFileSync(outPath);
-        await sock.sendMessage(chatId, { sticker: stickerBuf }, { quoted: message });
-        try { fs.unlinkSync(inPath); fs.unlinkSync(outPath); } catch {}
-      }
-    } catch (e) {
-      await sock.sendMessage(chatId, { text: `❌ Sticker creation failed. Make sure ffmpeg is installed.\n${e.message}`, ...CH }, { quoted: message });
-    }
-  }
-},
-
-{
-  command: 'toimg', aliases: ['stickertoimg', 'stickertojpg'], category: cat,
-  description: 'Convert sticker to image', usage: '.toimg (reply to sticker)',
-  async handler(sock, message, args, context) {
-    const chatId = context.chatId || message.key.remoteJid;
-    const m = message.message || {};
-    const quoted = m.extendedTextMessage?.contextInfo?.quotedMessage;
-    const sticker = m.stickerMessage || quoted?.stickerMessage;
-    if (!sticker) return sock.sendMessage(chatId, { text: '❌ Reply to a sticker with .toimg', ...CH }, { quoted: message });
-
-    try {
-      const stream = await downloadContentFromMessage(sticker, 'sticker');
-      const chunks = [];
-      for await (const c of stream) chunks.push(c);
-      const buf = Buffer.concat(chunks);
-
-      const tmpDir = path.join(process.cwd(), 'tmp');
-      if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir, { recursive: true });
-      const id = Date.now();
-      const inPath = path.join(tmpDir, `img_${id}.webp`);
-      const outPath = path.join(tmpDir, `img_${id}.png`);
-      fs.writeFileSync(inPath, buf);
-
-      await new Promise((resolve, reject) => {
-        exec(`ffmpeg -y -i "${inPath}" "${outPath}"`, (err) => err ? reject(err) : resolve());
-      });
-
-      await sock.sendMessage(chatId, { image: fs.readFileSync(outPath), caption: '🖼️ *Sticker → Image*', ...CH }, { quoted: message });
-      try { fs.unlinkSync(inPath); fs.unlinkSync(outPath); } catch {}
-    } catch (e) {
-      await sock.sendMessage(chatId, { text: `❌ Conversion failed: ${e.message}`, ...CH }, { quoted: message });
-    }
-  }
-},
-
-];
-
-module.exports = plugins;
