@@ -1,63 +1,27 @@
+// index.js
 'use strict';
-/**
- * 🔥 REDXBOT302 — FINAL EDITION v5.2 (Fixed for Railway)
- * Full plugin system · Built‑in menus removed · Antidelete integrated · YTDownloader
- * Owner: Abdul Rehman Rajpoot (+923009842133)
- */
-
-const express  = require('express');
-const cors     = require('cors');
-const http     = require('http');
+const express = require('express');
+const cors = require('cors');
+const http = require('http');
 const socketIo = require('socket.io');
-const path     = require('path');
-const fs       = require('fs');
-const crypto   = require('crypto');
+const path = require('path');
+const fs = require('fs');
+const crypto = require('crypto');
 require('dotenv').config();
 
-const {
-  makeWASocket,
-  useMultiFileAuthState,
-  DisconnectReason,
-  fetchLatestBaileysVersion,
-  Browsers,
-} = require('@whiskeysockets/baileys');
+const { makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion, Browsers } = require('@whiskeysockets/baileys');
 const P = require('pino');
 
-// ── SAFE LOAD OF OPTIONAL MODULES ───────────────────────────
-let antidelete = {
-  storeMessage: async () => {},
-  handleMessageRevocation: async () => {}
-};
-let ytDownloader = null; // not used, but kept for compatibility
-let GroupEvents = async () => {};
-
-try {
-  // If you have these files, they will be loaded; otherwise we use the dummy above
-  const ad = require('./lib/antidelete');
-  if (ad && typeof ad === 'object') antidelete = ad;
-} catch (e) {
-  console.warn('⚠️ antidelete module not found, using dummy.');
-}
-
-try {
-  const yd = require('./lib/ytdownloader');
-  if (yd) ytDownloader = yd;
-} catch (e) {
-  console.warn('⚠️ ytdownloader module not found, ignoring.');
-}
-
-try {
-  const ge = require('./lib/groupevents');
-  if (ge && typeof ge === 'function') GroupEvents = ge;
-} catch (e) {
-  console.warn('⚠️ groupevents module not found, group events disabled.');
-}
+// Import our modules
+const commandHandler = require('./lib/commandHandler');
+const messageHandler = require('./lib/messageHandler');
+const utils = require('./lib/utils');
 
 // ── APP ─────────────────────────────────────────────────────
-const app    = express();
+const app = express();
 const server = http.createServer(app);
-const io     = socketIo(server, { cors: { origin: '*' } });
-const PORT   = process.env.PORT || 3000;
+const io = socketIo(server, { cors: { origin: '*' } });
+const PORT = process.env.PORT || 3000;
 const START_TIME = Date.now();
 
 app.use(cors({ origin: '*', methods: ['GET','POST','DELETE','PUT','OPTIONS'], allowedHeaders: ['Content-Type','x-admin-token','x-deploy-key'] }));
@@ -75,13 +39,11 @@ const BOT_IMG      = process.env.MENU_IMAGE   || 'https://files.catbox.moe/s36b1
 const REPO_LINK    = process.env.REPO_LINK    || 'https://github.com/AbdulRehman19721986/REDXBOT-MD';
 const NL_JID       = process.env.NEWSLETTER_JID || '120363405513439052@newsletter';
 const NL_NAME      = '🔥 REDXBOT302 🔥';
-const WA_GROUP     = 'https://chat.whatsapp.com/LhSmx2SeXX75r8I2bxsNDo';
-const TG_GROUP     = 'https://t.me/TeamRedxhacker2';
 global.BOT_MODE    = process.env.BOT_MODE || 'public';
 
 let adminUsername = process.env.ADMIN_USERNAME || 'redx';
 let adminPassword = process.env.ADMIN_PASSWORD || 'redx';
-const adminSessions = new Map(); // token → { user, ts }
+const adminSessions = new Map();
 
 // ── PATHS ────────────────────────────────────────────────────
 const SESSIONS_DIR   = path.join(__dirname, 'sessions');
@@ -109,13 +71,11 @@ const detectPlatform = () => {
   return 'Local';
 };
 
-// ── PERSISTENT DATA ──────────────────────────────────────────
 let statsData = { totalUsers: 0, pairCount: 0 };
 const loadStats = () => { try { if (fs.existsSync(DATA_FILE)) statsData = { ...statsData, ...JSON.parse(fs.readFileSync(DATA_FILE,'utf8')) }; } catch {} };
 const saveStats = () => { try { fs.writeFileSync(DATA_FILE, JSON.stringify({ ...statsData, lastUpdated: new Date().toISOString() },null,2)); } catch {} };
 loadStats(); setInterval(saveStats, 30000);
 
-// ── DEPLOYS REGISTRY ─────────────────────────────────────────
 let deploys = {};
 const loadDeploys = () => { try { if (fs.existsSync(DEPLOYS_FILE)) deploys = JSON.parse(fs.readFileSync(DEPLOYS_FILE,'utf8')); } catch {} };
 const saveDeploys = () => { try { fs.writeFileSync(DEPLOYS_FILE, JSON.stringify(deploys,null,2)); } catch {} };
@@ -144,101 +104,14 @@ const loadServers = () => { try { if (fs.existsSync(SERVERS_FILE)) servers = JSO
 const saveServers = () => { try { fs.writeFileSync(SERVERS_FILE, JSON.stringify(servers,null,2)); } catch {} };
 loadServers();
 
-// ── ACTIVE CONNECTIONS (per number) ────────────────────────
 const activeConnections = new Map();
-
 const broadcastStats = () => {
   const connected = [...activeConnections.values()].filter(c=>c.connected).length;
   io.emit('statsUpdate', { activeSockets: connected, totalUsers: statsData.totalUsers, pairCount: statsData.pairCount });
 };
 
-// ======================== PLUGIN LOADER ========================
-const commands   = new Map();
-const pluginsDir = path.join(__dirname, 'plugins');
-let cmdCount     = 0;
-
-const loadPlugins = () => {
-  commands.clear(); cmdCount = 0;
-  if (!fs.existsSync(pluginsDir)) { fs.mkdirSync(pluginsDir,{recursive:true}); return; }
-  const files = fs.readdirSync(pluginsDir).filter(f=>f.endsWith('.js')&&!f.startsWith('.'));
-
-  for (const file of files) {
-    try {
-      const fp = path.join(pluginsDir, file);
-      delete require.cache[require.resolve(fp)];
-      const mod = require(fp);
-
-      const normalise = (raw) => {
-        if (!raw || typeof raw !== 'object') return null;
-        if (raw.pattern && raw.execute) return raw;
-        if ((raw.command || raw.pattern) && (raw.handler || raw.execute)) {
-          const pattern = raw.command || raw.pattern;
-          const execute = raw.handler
-            ? async (conn, msg, m, opts) => {
-                const context = {
-                  chatId: opts.from,
-                  command: pattern,
-                  config: {
-                    botName: BOT_NAME,
-                    ownerName: OWNER_NAME,
-                    ownerNumber: OWNER_NUM,
-                    coOwner: CO_OWNER,
-                    coOwnerNumber: CO_OWNER_NUM,
-                    prefix: PREFIX,
-                    mode: global.BOT_MODE,
-                    platform: detectPlatform(),
-                  },
-                  deployId: DEPLOY_ID,
-                  channelInfo: {
-                    contextInfo: {
-                      forwardingScore: 999,
-                      isForwarded: true,
-                      forwardedNewsletterMessageInfo: { newsletterJid: NL_JID, newsletterName: NL_NAME, serverMessageId: -1 },
-                    }
-                  },
-                  ...opts,
-                };
-                return raw.handler(conn, msg, opts.args || [], context);
-              }
-            : raw.execute;
-          return {
-            ...raw,
-            pattern,
-            execute,
-            alias: raw.aliases || raw.alias || [],
-            category: raw.category || 'other',
-            desc: raw.description || raw.desc || '',
-            ownerOnly: !!raw.ownerOnly,
-          };
-        }
-        return null;
-      };
-
-      const register = (cmd) => {
-        const norm = normalise(cmd);
-        if (!norm) return;
-        commands.set(norm.pattern, norm); cmdCount++;
-        const aliases = Array.isArray(norm.alias) ? norm.alias : [];
-        aliases.forEach(a => { if (a) commands.set(a, norm); });
-      };
-
-      if (Array.isArray(mod)) {
-        mod.forEach(register);
-      } else if (mod && typeof mod === 'object') {
-        const norm = normalise(mod);
-        if (norm) {
-          register(mod);
-        } else {
-          Object.values(mod).forEach(v => { if (v && typeof v === 'object') register(v); });
-        }
-      }
-    } catch(e){ console.error(`Plugin ${file}: ${e.message?.slice(0,120)}`); }
-  }
-  console.log(`🔌 ${cmdCount} commands loaded from ${files.length} plugin files`);
-  global.botCommands = commands;
-};
-loadPlugins();
-if (fs.existsSync(pluginsDir)) fs.watch(pluginsDir,(e,f)=>{ if(f&&f.endsWith('.js')){ console.log(`♻️ Reloading ${f}`); loadPlugins(); } });
+// ── LOAD PLUGINS (via commandHandler) ──────────────────────
+commandHandler.loadPlugins();   // populates commandHandler.commands
 
 // ======================== INITIALIZATION FUNCTIONS ========================
 async function initConnection(number) {
@@ -246,7 +119,7 @@ async function initConnection(number) {
   if (!fs.existsSync(sessionDir)) fs.mkdirSync(sessionDir, { recursive: true });
 
   const { state, saveCreds } = await useMultiFileAuthState(sessionDir);
-  const { version }          = await fetchLatestBaileysVersion();
+  const { version } = await fetchLatestBaileysVersion();
 
   const conn = makeWASocket({
     version,
@@ -308,7 +181,7 @@ function setupHandlers(conn, number, saveCreds) {
       broadcastStats();
       io.emit('botStatus', { connected: false, number });
 
-      const code        = lastDisconnect?.error?.output?.statusCode;
+      const code = lastDisconnect?.error?.output?.statusCode;
       const isLoggedOut = code === DisconnectReason.loggedOut || code === 401 || code === 405;
       console.log(`❌ [${number}] closed code=${code}`);
 
@@ -338,26 +211,33 @@ function setupHandlers(conn, number, saveCreds) {
   conn.ev.on('messages.upsert', async ({ messages, type }) => {
     if (type !== 'notify') return;
     for (const msg of messages) {
-      // Store for antidelete (safe call)
-      if (antidelete && typeof antidelete.storeMessage === 'function')
-        await antidelete.storeMessage(conn, msg);
-      try { await handleMessage(conn, msg, number); } catch(e){ console.error(`msg: ${e.message}`); }
+      // Antidelete handling (if available)
+      try {
+        const antidelete = require('./lib/antidelete');
+        if (antidelete && antidelete.storeMessage) await antidelete.storeMessage(conn, msg);
+      } catch {}
+
+      // Process message
+      await messageHandler.handleMessage(conn, msg, number, { deploys, DEPLOY_ID, statsData, broadcastStats, io, BOT_NAME, OWNER_NUM, CO_OWNER_NUM, global });
     }
   });
 
   // Antidelete: listen for protocol messages that indicate a deletion
   conn.ev.on('messages.update', async (updates) => {
     for (const update of updates) {
-      if (update.update?.protocolMessage?.type === 1) { // message deletion
-        if (antidelete && typeof antidelete.handleMessageRevocation === 'function')
-          await antidelete.handleMessageRevocation(conn, update);
+      if (update.update?.protocolMessage?.type === 1) {
+        try {
+          const antidelete = require('./lib/antidelete');
+          if (antidelete && antidelete.handleMessageRevocation) await antidelete.handleMessageRevocation(conn, update);
+        } catch {}
       }
     }
   });
 
-  // Group events (safe call)
+  // Group events
   conn.ev.on('group-participants.update', async (update) => {
     try {
+      const GroupEvents = require('./lib/groupevents');
       await GroupEvents(conn, update, {
         botName: BOT_NAME, ownerName: OWNER_NAME,
         menuImage: BOT_IMG, newsletterJid: NL_JID,
@@ -386,7 +266,7 @@ _ᴘᴏᴡᴇʀᴇᴅ ʙʏ ʀᴇᴅxʙᴏᴛ302_
 🔑 *Your Deploy Key:* \`${dep.deployKey}\`
 🌐 *Platform:* ${detectPlatform()}
 👑 *Owner:* ${OWNER_NAME}
-📦 *Commands:* ${cmdCount+8}+
+📦 *Commands:* ${commandHandler.cmdCount+8}+
 📌 *Prefix:* ${dep.prefix||PREFIX}
 🌍 *Mode:* ${global.BOT_MODE.toUpperCase()}
 
@@ -416,144 +296,13 @@ _ᴘᴏᴡᴇʀᴇᴅ ʙʏ ʀᴇᴅxʙᴏᴛ302_
   });
 }
 
-// ======================== MESSAGE HANDLER ========================
-async function handleMessage(conn, msg, sessionId) {
-  const from    = msg.key.remoteJid;
-  const sender  = msg.key.participant || msg.key.remoteJid;
-  const sNum    = sender.split('@')[0].split(':')[0];
-  const isOwner = sNum === OWNER_NUM || sNum === CO_OWNER_NUM || sNum === sessionId;
-
-  // Status messages
-  if (from === 'status@broadcast') {
-    if (process.env.AUTO_STATUS_SEEN !== 'false') await conn.readMessages([msg.key]).catch(()=>{});
-    if (process.env.AUTO_STATUS_REACT !== 'false') {
-      const e=['🔥','⚡','💯','👑','🚀','💎','❤️','💜','✨','🌟'][Math.floor(Math.random()*10)];
-      await conn.sendMessage(from,{react:{text:e,key:msg.key}},{statusJidList:[sender,conn.user.id]}).catch(()=>{});
-    }
-    return;
-  }
-  if (from?.endsWith('@newsletter')) return;
-  if (!msg.message) return;
-  if (global.BOT_MODE === 'private' && !isOwner) return;
-
-  const body = msg.message?.conversation
-    || msg.message?.extendedTextMessage?.text
-    || msg.message?.imageMessage?.caption
-    || msg.message?.videoMessage?.caption || '';
-
-  const dep    = deploys[DEPLOY_ID];
-  const pfx    = dep?.prefix || PREFIX;
-  if (!body.startsWith(pfx)) return;
-
-  const args = body.slice(pfx.length).trim().split(/ +/);
-  const cmd  = args.shift().toLowerCase();
-  const q    = body.slice(pfx.length + cmd.length).trim();
-
-  console.log(`[${new Date().toLocaleTimeString()}] ${pfx}${cmd} | ${sNum}`);
-
-  // Built‑in commands (only essential ones)
-  if (await runBuiltIn(conn, msg, cmd, args, q, from, sender, isOwner, pfx)) return;
-
-  // Plugin commands
-  if (commands.has(cmd)) {
-    const plugin = commands.get(cmd);
-    if (plugin.ownerOnly && !isOwner) {
-      await conn.sendMessage(from, { text: '❌ This command is only for the bot owner.' }, { quoted: msg });
-      return;
-    }
-    try {
-      const reply   = (text, opts={}) => conn.sendMessage(from,{text},{quoted:msg,...opts});
-      const isGroup = from.endsWith('@g.us');
-      let gMeta = null;
-      if (isGroup) { try { gMeta = await conn.groupMetadata(from); } catch {} }
-      let isAdmin = false;
-      if (isGroup && gMeta) { const p = gMeta.participants.find(p=>p.id===sender); isAdmin = p?.admin==='admin'||p?.admin==='superadmin'; }
-      const quoted = getQuoted(msg);
-      const pluginOpts = {
-        args, q, reply, from, isGroup, groupMetadata: gMeta,
-        sender, isAdmin, isOwner, botName: BOT_NAME, ownerName: OWNER_NAME,
-        prefix: pfx, senderNumber: sNum,
-        chatId: from, deployId: DEPLOY_ID,
-      };
-      await plugin.execute(conn, msg, {
-        mentionedJid: msg.message?.extendedTextMessage?.contextInfo?.mentionedJid||[],
-        quoted, sender, key: msg.key,
-        message: msg.message,
-      }, pluginOpts);
-    } catch(e){ console.error(`cmd[${cmd}]: ${e.message}`); }
-  }
-}
-
-async function runBuiltIn(conn, msg, cmd, args, q, from, sender, isOwner, pfx) {
-  const dep = deploys[DEPLOY_ID];
-  const nlCtx = {
-    forwardingScore: 999, isForwarded: true,
-    forwardedNewsletterMessageInfo: { newsletterJid: NL_JID, newsletterName: NL_NAME, serverMessageId: -1 },
-    externalAdReply: { title: `🔥 ${BOT_NAME}`, body: `Owner: ${OWNER_NAME}`, thumbnailUrl: BOT_IMG, sourceUrl: REPO_LINK, mediaType: 1, renderLargerThumbnail: false },
-  };
-  const s = text => conn.sendMessage(from, { text, contextInfo: nlCtx }, { quoted: msg });
-
-  switch(cmd) {
-    case 'ping':
-      const t = Date.now();
-      await conn.sendMessage(from, { react: { text: '⚡', key: msg.key } });
-      await s(`⚡ *ᴘɪɴɢ:* \`${Date.now()-t}ms\`\n\n> 🔥 ${BOT_NAME}`);
-      return true;
-
-    case 'owner':
-      await conn.sendMessage(from, {
-        contacts: { displayName: OWNER_NAME, contacts: [{ vcard: `BEGIN:VCARD\nVERSION:3.0\nFN:${OWNER_NAME}\nTEL;type=CELL;waid=${OWNER_NUM}:+${OWNER_NUM}\nEND:VCARD` }] }
-      }, { quoted: msg });
-      await s(`👑 *ᴏᴡɴᴇʀ:* ${OWNER_NAME}\n📱 *ɴᴜᴍ:* +${OWNER_NUM}\n👤 *ᴄᴏ:* ${CO_OWNER}\n\n> 🔥 ${BOT_NAME}`);
-      return true;
-
-    case 'mode':
-      if (!isOwner) { await s('❌ Owner only.'); return true; }
-      const m = args[0]?.toLowerCase();
-      if (m==='public'||m==='private') {
-        global.BOT_MODE = m;
-        if (dep) dep.mode = m;
-        saveDeploys();
-        await s(`✅ *ᴍᴏᴅᴇ:* \`${m.toUpperCase()}\`\n\n> 🔥 ${BOT_NAME}`);
-      } else await s(`📌 *ᴄᴜʀʀᴇɴᴛ ᴍᴏᴅᴇ:* \`${global.BOT_MODE.toUpperCase()}\`\n\n💡 Use: \`${pfx}mode public\` | \`${pfx}mode private\``);
-      return true;
-
-    case 'deployid':
-    case 'myid':
-      await s(`🆔 *ᴅᴇᴘʟᴏʏ ɪᴅ:* \`${DEPLOY_ID}\`\n🔑 *ᴋᴇʏ:* \`${dep?.deployKey||'—'}\`\n🌐 *ᴘʟᴀᴛᴇ:* ${detectPlatform()}\n\n> 🔥 ${BOT_NAME}`);
-      return true;
-
-    case 'runtime':
-    case 'uptime':
-      const up = Math.floor((Date.now()-START_TIME)/1000);
-      const h=Math.floor(up/3600), m2=Math.floor((up%3600)/60), s2=up%60;
-      await s(`⏱️ *ʀᴜɴᴛɪᴍᴇ:* \`${h}h ${m2}m ${s2}s\`\n📦 *ᴄᴍᴅs:* ${cmdCount+8}+\n🌍 *ᴍᴏᴅᴇ:* ${global.BOT_MODE.toUpperCase()}\n\n> 🔥 ${BOT_NAME}`);
-      return true;
-
-    case 'restart':
-    case 'shutdown':
-      if (!isOwner) { await s('❌ Owner only.'); return true; }
-      await s('🔄 *Restarting...*\n\n> 🔥 '+BOT_NAME);
-      setTimeout(()=>process.exit(0),2000);
-      return true;
-
-    default: return false;
-  }
-}
-
-function getQuoted(msg) {
-  const ctx=msg.message?.extendedTextMessage?.contextInfo;
-  if(!ctx?.quotedMessage)return null;
-  return{message:{key:{remoteJid:ctx.participant||ctx.stanzaId,id:ctx.stanzaId,fromMe:false},message:ctx.quotedMessage},sender:ctx.participant};
-}
-
 // ======================== EXPRESS ROUTES ========================
 app.get('/', (req,res)=>res.sendFile(path.join(__dirname,'public','index.html')));
 app.get('/api/status', (req,res)=>res.json(getStats()));
 app.get('/api/config', (req,res)=>res.json({
   botName: BOT_NAME, ownerName: OWNER_NAME, coOwner: CO_OWNER,
   prefix: PREFIX, menuImage: BOT_IMG, repoLink: REPO_LINK,
-  waGroup: WA_GROUP, tgGroup: TG_GROUP,
+  waGroup: 'https://chat.whatsapp.com/LhSmx2SeXX75r8I2bxsNDo', tgGroup: 'https://t.me/TeamRedxhacker2',
   hasSession: (()=>{ try{ return fs.readdirSync(SESSIONS_DIR).some(d=>fs.existsSync(path.join(SESSIONS_DIR,d,'creds.json'))); }catch{return false;} })(),
   deployId: DEPLOY_ID, platform: detectPlatform(),
 }));
@@ -581,7 +330,7 @@ app.post('/api/pair', async (req, res) => {
     if (!fs.existsSync(sessionDir)) fs.mkdirSync(sessionDir,{recursive:true});
 
     const { state, saveCreds } = await useMultiFileAuthState(sessionDir);
-    const { version }          = await fetchLatestBaileysVersion();
+    const { version } = await fetchLatestBaileysVersion();
 
     conn = makeWASocket({
       version,
@@ -637,7 +386,7 @@ app.post('/api/logout', async (req,res) => {
   } catch(err){ res.status(500).json({error:err.message}); }
 });
 
-app.post('/api/reload',(req,res)=>{ loadPlugins(); res.json({success:true,commands:cmdCount}); });
+app.post('/api/reload',(req,res)=>{ commandHandler.loadPlugins(); res.json({success:true,commands:commandHandler.cmdCount}); });
 
 app.get('/api/deploy/:id',(req,res)=>{
   const id=req.params.id.toUpperCase(); const d=deploys[id];
@@ -721,7 +470,7 @@ app.post('/api/admin/logout',adminAuth,(req,res)=>{ adminSessions.delete(req.hea
 app.get('/api/admin/overview',adminAuth,(req,res)=>res.json({
   stats:{ totalDeploys:Object.keys(deploys).length, totalPairs:statsData.pairCount, totalUsers:statsData.totalUsers, uptime:Math.floor((Date.now()-START_TIME)/1000) },
   currentDeploy: deploys[DEPLOY_ID], servers, platform:detectPlatform(),
-  adminUser:req.adminSession.user, botVersion:'5.2.0', nodeVersion:process.version, memUsage:process.memoryUsage(), activeConnections:activeConnections.size,
+  adminUser:req.adminSession.user, botVersion:'6.0.0', nodeVersion:process.version, memUsage:process.memoryUsage(), activeConnections:activeConnections.size,
 }));
 
 app.get('/api/admin/deploys',adminAuth,(req,res)=>res.json({deploys:Object.values(deploys)}));
@@ -818,12 +567,12 @@ app.get('/health', (req, res) => res.json({
 // ======================== START ========================
 server.listen(PORT, async () => {
   console.log(`\n╔════════════════════════════════════════════════════╗`);
-  console.log(`║  🔥 REDXBOT302 FINAL EDITION v5.2                  ║`);
+  console.log(`║  🔥 REDXBOT302 MODULAR EDITION v6.0                ║`);
   console.log(`║  🌐 http://localhost:${String(PORT).padEnd(26)}║`);
   console.log(`║  🆔 Deploy ID: ${String(DEPLOY_ID).padEnd(34)}║`);
   console.log(`║  🔑 Deploy Key: ${String(deploys[DEPLOY_ID]?.deployKey||'—').slice(0,20).padEnd(33)}║`);
   console.log(`║  🌐 Platform:  ${String(detectPlatform()).padEnd(34)}║`);
-  console.log(`║  🔌 Commands:  ${String(cmdCount+'+ loaded').padEnd(34)}║`);
+  console.log(`║  🔌 Commands:  ${String(commandHandler.cmdCount+'+ loaded').padEnd(34)}║`);
   console.log(`╚════════════════════════════════════════════════════╝\n`);
   await reloadExistingSessions();
   startKeepAlive();
@@ -851,7 +600,7 @@ function getStats() {
     connected: [...activeConnections.values()].some(e=>e.connected),
     activeSockets: [...activeConnections.values()].filter(e=>e.connected).length,
     botNumber: (()=>{ for(const[n,e]of activeConnections) if(e.connected) return n; return ''; })(),
-    commands: cmdCount+8,
+    commands: commandHandler.cmdCount+8,
     totalUsers: statsData.totalUsers,
     pairCount: statsData.pairCount,
     uptime: Math.floor((Date.now()-START_TIME)/1000),
