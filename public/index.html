@@ -3,982 +3,359 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>🔥 REDXBOT302 — Pair Your Bot</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔥</text></svg>"/>
-<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Share+Tech+Mono&family=Exo+2:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.min.js"></script>
+<title>REDXBOT302 — Connect</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet"/>
 <style>
+*,::before,::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#060810;--bg2:#0a0d18;--bg3:#0f1222;
-  --red:#e8192c;--rg:rgba(232,25,44,.28);--rs:rgba(232,25,44,.1);
-  --gold:#f59e0b;--gs:rgba(16,185,129,.1);--green:#10b981;
-  --cyan:#06b6d4;--cs:rgba(6,182,212,.1);--purple:#7c3aed;--ps:rgba(124,58,237,.1);
-  --text:#e8eaf2;--muted:rgba(232,234,242,.5);--faint:rgba(232,234,242,.17);
-  --b:rgba(255,255,255,.07);--b2:rgba(255,255,255,.13);
-  --s1:rgba(255,255,255,.03);--s2:rgba(255,255,255,.055);--s3:rgba(255,255,255,.09);
-  --fn:'Rajdhani',sans-serif;--fm:'Share Tech Mono',monospace;--fb:'Exo 2',sans-serif;
-  --r:12px;
+  --ink:#0a0f1e;--paper:#f8f6f1;--cream:#f0ede4;
+  --red:#e63030;--red2:#ff5a5a;
+  --gold:#c9a84c;--gold2:#f0cb6e;
+  --dim:#8a8579;--line:#d8d3c8;
+  --glass:rgba(255,255,255,.08);
 }
-*{margin:0;padding:0;box-sizing:border-box}
 html{scroll-behavior:smooth}
-body{font-family:var(--fb);background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased}
-body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 70% 50% at 10% 5%,rgba(232,25,44,.05),transparent),radial-gradient(ellipse 50% 40% at 90% 95%,rgba(124,58,237,.04),transparent);pointer-events:none;z-index:0}
-body::after{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(232,25,44,.013) 1px,transparent 1px),linear-gradient(90deg,rgba(232,25,44,.013) 1px,transparent 1px);background-size:50px 50px;pointer-events:none;z-index:0}
-::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:var(--bg2)}::-webkit-scrollbar-thumb{background:var(--red);border-radius:4px}
+body{
+  min-height:100vh;background:var(--ink);color:var(--paper);
+  font-family:'DM Sans',sans-serif;font-size:16px;line-height:1.6;
+  overflow-x:hidden;
+}
+/* Noise overlay */
+body::before{
+  content:'';position:fixed;inset:0;opacity:.025;pointer-events:none;z-index:0;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+  background-repeat:repeat;background-size:128px;
+}
+/* Glow blobs */
+.blob{position:fixed;border-radius:50%;filter:blur(120px);pointer-events:none;z-index:0}
+.blob-1{width:600px;height:600px;background:radial-gradient(circle,rgba(230,48,48,.18),transparent 70%);top:-200px;right:-100px}
+.blob-2{width:500px;height:500px;background:radial-gradient(circle,rgba(201,168,76,.12),transparent 70%);bottom:-150px;left:-100px}
 
-/* HEADER */
-header{position:sticky;top:0;z-index:200;height:58px;background:rgba(6,8,16,.93);backdrop-filter:blur(24px);border-bottom:1px solid var(--b);display:flex;align-items:center;padding:0 1.4rem;gap:.8rem}
-header::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--red),var(--gold),transparent);animation:hl 3s ease infinite}
-@keyframes hl{0%,100%{opacity:.3}50%{opacity:.9}}
-.logo{display:flex;align-items:center;gap:.6rem;text-decoration:none;margin-right:auto;cursor:pointer}
-.logo-i{width:36px;height:36px;background:linear-gradient(135deg,#250008,#500018);border:1px solid var(--red);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:1.15rem;box-shadow:0 0 14px var(--rg);flex-shrink:0}
-.logo-n{font-family:var(--fn);font-size:1.25rem;font-weight:700;letter-spacing:1.5px;line-height:1}
-.logo-n b{color:var(--red)}
-.logo-s{font-family:var(--fm);font-size:.44rem;letter-spacing:3px;color:var(--muted);margin-top:2px}
-.hn{display:flex;gap:.38rem;align-items:center}
-.ha{font-family:var(--fm);font-size:.56rem;letter-spacing:1px;padding:.22rem .58rem;border-radius:6px;border:1px solid var(--b);color:var(--muted);text-decoration:none;transition:all .2s;text-transform:uppercase}
-.ha:hover{border-color:rgba(232,25,44,.4);color:var(--red)}
-.cb{font-family:var(--fm);font-size:.58rem;display:flex;align-items:center;gap:.36rem;padding:.22rem .68rem;border-radius:100px;border:1px solid rgba(232,25,44,.3);background:var(--rs);color:var(--red);transition:all .3s;white-space:nowrap}
-.cb.on{background:var(--gs);border-color:rgba(16,185,129,.3);color:var(--green)}
-.pu{width:6px;height:6px;border-radius:50%;background:currentColor;animation:pu 2s infinite;flex-shrink:0}
-@keyframes pu{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.2;transform:scale(.4)}}
+.wrap{position:relative;z-index:1;max-width:680px;margin:0 auto;padding:60px 24px 100px}
 
-/* NAV */
-.nav{position:sticky;top:58px;z-index:190;background:rgba(10,13,24,.97);backdrop-filter:blur(20px);border-bottom:1px solid var(--b);display:flex;padding:0 1.4rem;gap:0;overflow-x:auto;scrollbar-width:none}
-.nav::-webkit-scrollbar{display:none}
-.nb{font-family:var(--fn);font-size:.83rem;font-weight:600;letter-spacing:1px;padding:.62rem 1.1rem;border:none;background:none;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap;text-transform:uppercase;display:flex;align-items:center;gap:.36rem}
-.nb:hover{color:var(--text)}
-.nb.on{color:var(--red);border-bottom-color:var(--red)}
-.nb.at{color:#a78bfa}.nb.at.on{color:var(--gold);border-bottom-color:var(--gold)}
-.nb i{font-size:.7rem}
+/* ── HEADER ── */
+header{margin-bottom:64px}
+.logo-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:48px}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:1.1rem;letter-spacing:.05em;
+  background:linear-gradient(135deg,var(--gold),var(--gold2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.status-pill{display:flex;align-items:center;gap:7px;background:rgba(46,200,120,.08);
+  border:1px solid rgba(46,200,120,.2);border-radius:50px;padding:5px 14px;
+  font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;color:#2ec878}
+.pulse{width:7px;height:7px;border-radius:50%;background:#2ec878;animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(46,200,120,.4)}50%{opacity:.7;box-shadow:0 0 0 6px rgba(46,200,120,0)}}
 
-/* PAGES */
-.pw{padding-top:0;min-height:calc(100vh - 108px);position:relative;z-index:1}
-.pg{display:none;max-width:960px;margin:0 auto;padding:2rem 1.4rem}
-.pg.on{display:block;animation:fu .3s ease}
-@keyframes fu{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.eyebrow{font-size:.72rem;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);margin-bottom:16px}
+h1{font-family:'Syne',sans-serif;font-size:clamp(2.6rem,8vw,4rem);font-weight:800;
+  line-height:1.05;letter-spacing:-.03em;margin-bottom:20px}
+h1 em{font-style:normal;background:linear-gradient(135deg,var(--red),var(--red2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.subtitle{font-size:1.05rem;color:var(--dim);font-weight:300;max-width:480px}
 
-/* GRID */
-.g2{display:grid;grid-template-columns:1fr 1fr;gap:1.2rem}
-.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:1.1rem}
-.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:.95rem}
-.full{grid-column:1/-1}
-@media(max-width:760px){.g2,.g3{grid-template-columns:1fr}}
-@media(max-width:860px){.g3{grid-template-columns:1fr 1fr}}
-@media(max-width:600px){.g4{grid-template-columns:1fr 1fr}}
+/* ── STATS BAR ── */
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;
+  background:var(--line);border:1px solid var(--line);border-radius:16px;overflow:hidden;margin:40px 0 52px}
+.stat{background:rgba(255,255,255,.02);padding:20px 18px;text-align:center}
+.stat-n{font-family:'Syne',sans-serif;font-size:1.9rem;font-weight:800;
+  background:linear-gradient(135deg,var(--gold),var(--gold2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.stat-l{font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);margin-top:3px}
 
-/* CARD */
-.card{background:var(--s1);border:1px solid var(--b);border-radius:var(--r);padding:1.45rem;position:relative;overflow:hidden;transition:border-color .22s}
-.card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--red),var(--gold));transform:scaleX(0);transform-origin:left;transition:transform .28s}
-.card:hover{border-color:rgba(232,25,44,.2)}.card:hover::before{transform:scaleX(1)}
-.card.f::before{display:none}.card.f:hover{border-color:var(--b);transform:none}
-.card.cy::before{background:linear-gradient(90deg,var(--cyan),var(--green))}
-.card.go::before{background:linear-gradient(90deg,var(--gold),var(--red))}
-.card.pu::before{background:linear-gradient(90deg,var(--purple),var(--cyan))}
-.card h2{font-family:var(--fn);font-size:1.15rem;font-weight:700;letter-spacing:1.5px;margin-bottom:.3rem}
-.card p{color:var(--muted);font-size:.8rem;line-height:1.6}
+/* ── CARD ── */
+.card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);
+  border-radius:20px;padding:32px;margin-bottom:16px;backdrop-filter:blur(10px)}
+.card-title{font-family:'Syne',sans-serif;font-size:.8rem;letter-spacing:.15em;
+  text-transform:uppercase;color:var(--gold);margin-bottom:22px;display:flex;align-items:center;gap:8px}
+.card-title::before{content:'';display:block;width:18px;height:1px;background:var(--gold)}
 
-/* HERO */
-.hero{text-align:center;padding:2.4rem 1rem 1.6rem}
-.heye{font-family:var(--fm);font-size:.58rem;letter-spacing:4px;color:var(--red);text-transform:uppercase;margin-bottom:.55rem;display:inline-flex;align-items:center;gap:.45rem}
-.heye::before,.heye::after{content:'';width:24px;height:1px;background:var(--red);opacity:.5}
-.hero h1{font-family:var(--fn);font-size:clamp(2.4rem,8vw,4.8rem);font-weight:700;letter-spacing:3px;line-height:1;background:linear-gradient(135deg,#fff 0%,#ffc8d0 40%,var(--red) 80%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:.35rem}
-.hero-s{color:var(--muted);font-size:.85rem;max-width:480px;margin:0 auto 1.4rem}
-.hst{display:flex;gap:1.8rem;justify-content:center;flex-wrap:wrap}
-.hs .v{font-family:var(--fn);font-size:1.65rem;font-weight:700;color:var(--gold)}
-.hs .l{font-family:var(--fm);font-size:.48rem;letter-spacing:2px;color:var(--faint);text-transform:uppercase}
+/* ── INPUT ── */
+.input-wrap{position:relative;margin-bottom:14px}
+input[type=tel],input[type=text]{
+  width:100%;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);
+  border-radius:12px;padding:16px 20px;color:var(--paper);font-family:'DM Sans',sans-serif;
+  font-size:1rem;outline:none;transition:border .25s,box-shadow .25s;
+  -webkit-text-fill-color:var(--paper) !important;
+}
+input:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(201,168,76,.12)}
+input::placeholder{color:rgba(255,255,255,.25)}
 
-/* INPUTS */
-.fld{margin-bottom:.7rem}
-.fld label{font-family:var(--fm);font-size:.56rem;letter-spacing:2px;color:var(--muted);text-transform:uppercase;display:block;margin-bottom:.3rem}
-input,select,textarea{width:100%;background:rgba(255,255,255,.04);border:1px solid rgba(232,25,44,.2);border-radius:8px;padding:.68rem .95rem;font-family:var(--fm);font-size:.86rem;color:var(--text);outline:none;transition:all .22s}
-input:focus,select:focus{border-color:var(--red);box-shadow:0 0 0 1px var(--red),0 0 14px rgba(232,25,44,.1)}
-input::placeholder{color:var(--faint)}
-select option{background:var(--bg3)}
-textarea{resize:vertical;min-height:70px}
+/* ── BUTTON ── */
+.btn{width:100%;padding:16px;border:none;border-radius:12px;font-family:'Syne',sans-serif;
+  font-size:.95rem;font-weight:700;letter-spacing:.04em;cursor:pointer;
+  transition:all .25s;position:relative;overflow:hidden}
+.btn-fire{
+  background:linear-gradient(135deg,#c9292a 0%,#e63c3c 40%,#ff6b35 100%);
+  color:#fff;box-shadow:0 4px 24px rgba(230,48,48,.35)}
+.btn-fire:hover{filter:brightness(1.08);transform:translateY(-2px);box-shadow:0 8px 32px rgba(230,48,48,.45)}
+.btn-fire:active{transform:scale(.98)}
+.btn-ghost{background:transparent;border:1px solid rgba(255,255,255,.15);color:var(--dim);margin-top:8px}
+.btn-ghost:hover{border-color:var(--gold);color:var(--gold)}
 
-/* BUTTONS */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:.44rem;background:linear-gradient(135deg,#9a1020,var(--red));color:#fff;border:none;cursor:pointer;font-family:var(--fn);font-size:.95rem;font-weight:600;letter-spacing:1.5px;padding:.7rem 1.3rem;border-radius:8px;transition:all .22s;box-shadow:0 4px 14px var(--rg);text-decoration:none;white-space:nowrap;width:100%}
-.btn:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 7px 22px var(--rg)}
-.btn:disabled{opacity:.38;cursor:not-allowed;transform:none}
-.btn.sm{font-size:.74rem;padding:.38rem .82rem;width:auto;letter-spacing:1px}
-.btn.out{background:transparent;border:1px solid rgba(232,25,44,.4);color:var(--red);box-shadow:none}
-.btn.out:hover:not(:disabled){background:var(--rs)}
-.btn.gn{background:linear-gradient(135deg,#068050,var(--green));box-shadow:0 4px 14px rgba(16,185,129,.22)}
-.btn.go{background:linear-gradient(135deg,#906000,var(--gold));box-shadow:0 4px 14px rgba(245,158,11,.22)}
-.btn.cy{background:linear-gradient(135deg,#045e9a,var(--cyan));box-shadow:0 4px 14px rgba(6,182,212,.22)}
-.btn.pu{background:linear-gradient(135deg,#400e88,var(--purple));box-shadow:0 4px 14px rgba(124,58,237,.22)}
-.btn.dg{background:linear-gradient(135deg,#780010,#be0020);box-shadow:0 4px 14px rgba(190,0,32,.22)}
-.brow{display:flex;gap:.5rem;flex-wrap:wrap}
+/* ── PAIRING CODE ── */
+.code-wrap{margin-top:22px;display:none}
+.code-wrap.show{display:block;animation:fadeUp .4s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.code-box{background:linear-gradient(135deg,rgba(201,168,76,.06),rgba(255,107,53,.04));
+  border:1px solid rgba(201,168,76,.3);border-radius:16px;padding:28px;text-align:center}
+.code-label{font-size:.7rem;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);margin-bottom:14px}
+.code-val{font-family:'Syne',sans-serif;font-size:2.8rem;font-weight:800;letter-spacing:.25em;
+  color:var(--paper);font-variant-numeric:tabular-nums}
+.code-hint{font-size:.8rem;color:var(--dim);margin-top:12px;line-height:1.5}
+.code-hint strong{color:var(--paper)}
 
-/* CODE BOX */
-.cbox{background:rgba(0,0,0,.5);border:2px solid rgba(232,25,44,.4);border-radius:14px;padding:1.65rem;text-align:center;display:none;margin-top:.9rem}
-.cbox.on{display:block;animation:fu .4s ease}
-.clbl{font-family:var(--fm);font-size:.54rem;letter-spacing:3.5px;color:var(--muted);text-transform:uppercase;margin-bottom:.35rem}
-.cval{font-family:var(--fn);font-size:2.7rem;font-weight:700;letter-spacing:13px;color:var(--gold);margin:.35rem 0;text-shadow:0 0 38px rgba(245,158,11,.42);cursor:pointer;user-select:all;transition:all .18s;display:block}
-.cval:hover{opacity:.72;letter-spacing:15px}
-.ccpy{font-family:var(--fm);font-size:.54rem;color:var(--faint);margin-bottom:.65rem}
-.tw{height:3px;background:var(--b);border-radius:2px;overflow:hidden;margin:.5rem 0 .3rem}
-.tb{height:100%;background:linear-gradient(90deg,var(--red),var(--gold));transition:width 1s linear}
-.tr{display:flex;justify-content:space-between;font-family:var(--fm);font-size:.56rem;color:var(--muted)}
+.id-box{margin-top:14px;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.08);
+  border-radius:12px;padding:16px 20px;text-align:center;display:none}
+.id-box.show{display:block}
+.id-label{font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--dim);margin-bottom:6px}
+.id-val{font-family:'Syne',sans-serif;font-size:1.5rem;font-weight:800;letter-spacing:.1em;color:var(--gold)}
+.id-hint{font-size:.75rem;color:var(--dim);margin-top:5px}
 
-/* BADGES */
-.badge{font-family:var(--fm);font-size:.52rem;padding:.18rem .48rem;border-radius:4px;text-transform:uppercase;letter-spacing:1px;display:inline-block}
-.badge.on{background:var(--gs);border:1px solid rgba(16,185,129,.3);color:var(--green)}
-.badge.off{background:var(--rs);border:1px solid rgba(232,25,44,.3);color:var(--red)}
-.badge.go{background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);color:var(--gold)}
-.badge.cy{background:var(--cs);border:1px solid rgba(6,182,212,.3);color:var(--cyan)}
-.badge.pu{background:var(--ps);border:1px solid rgba(124,58,237,.3);color:var(--purple)}
-.chip{display:inline-flex;align-items:center;gap:.36rem;font-family:var(--fm);font-size:.58rem;padding:.25rem .65rem;border-radius:100px}
-.chip.ld{background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);color:var(--gold)}
-.chip.ok{background:var(--gs);border:1px solid rgba(16,185,129,.3);color:var(--green)}
-.chip.er{background:var(--rs);border:1px solid rgba(232,25,44,.3);color:var(--red)}
-.chip.in{background:var(--cs);border:1px solid rgba(6,182,212,.3);color:var(--cyan)}
+/* ── TABS ── */
+.tabs{display:flex;gap:2px;background:rgba(0,0,0,.2);border-radius:12px;padding:3px;margin-bottom:24px}
+.tab{flex:1;padding:10px;text-align:center;border-radius:10px;cursor:pointer;
+  font-size:.82rem;font-weight:500;color:var(--dim);transition:all .2s;border:none;background:transparent}
+.tab.on{background:rgba(255,255,255,.07);color:var(--paper);font-weight:600}
+.tab:hover:not(.on){color:var(--paper)}
+.pane{display:none}.pane.on{display:block}
 
-/* ERROR */
-.ebox{display:none;background:var(--rs);border:1px solid rgba(232,25,44,.3);border-radius:8px;padding:.55rem .85rem;font-family:var(--fm);font-size:.68rem;color:var(--red);margin-top:.55rem;align-items:center;gap:.42rem}
-.ebox.on{display:flex}
-.okb{display:none;padding:.9rem 1.1rem;background:var(--gs);border:1px solid rgba(16,185,129,.3);border-radius:10px;margin-top:.7rem}
-.okb.on{display:flex;gap:.65rem;align-items:flex-start;animation:fu .3s ease}
-.okb .ic{font-size:1.4rem;flex-shrink:0}
-.okb h4{font-family:var(--fn);font-size:.9rem;color:var(--green);margin-bottom:.1rem}
-.okb p{font-size:.76rem;color:rgba(16,185,129,.7)}
+/* ── ALERT ── */
+.alert{padding:12px 16px;border-radius:10px;margin-top:14px;font-size:.85rem;display:none;line-height:1.5}
+.alert.show{display:block;animation:fadeUp .3s ease}
+.alert.ok{background:rgba(46,200,120,.08);border:1px solid rgba(46,200,120,.2);color:#4dd890}
+.alert.err{background:rgba(230,48,48,.08);border:1px solid rgba(230,48,48,.2);color:#ff7070}
+.alert.info{background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.2);color:var(--gold2)}
 
-/* STEPS */
-.steps{counter-reset:s;display:flex;flex-direction:column;gap:.48rem}
-.step{display:flex;align-items:flex-start;gap:.65rem;padding:.56rem .82rem;background:var(--s2);border:1px solid var(--b);border-radius:8px;font-size:.78rem;color:var(--muted)}
-.step::before{counter-increment:s;content:counter(s);background:var(--red);color:#fff;min-width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--fm);font-size:.58rem;flex-shrink:0;margin-top:1px}
-.step b{color:var(--text)}
-.step i{margin-top:3px;flex-shrink:0;color:var(--gold)}
+/* ── STEPS ── */
+.steps{display:flex;flex-direction:column;gap:16px}
+.step{display:flex;gap:14px;align-items:flex-start}
+.step-n{min-width:28px;height:28px;border-radius:50%;border:1px solid rgba(201,168,76,.4);
+  display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;
+  font-size:.75rem;font-weight:800;color:var(--gold);flex-shrink:0;margin-top:2px}
+.step-t{font-size:.9rem;color:var(--dim);line-height:1.6}
+.step-t strong{color:var(--paper)}
 
-/* STAT TILE */
-.st{background:var(--s2);border:1px solid var(--b);border-radius:var(--r);padding:1.1rem;display:flex;flex-direction:column;gap:.3rem;transition:border-color .18s}
-.st:hover{border-color:var(--b2)}
-.st .ti{font-size:1.2rem}
-.st .tv{font-family:var(--fn);font-size:1.55rem;font-weight:700}
-.st .tl{font-family:var(--fm);font-size:.52rem;letter-spacing:2px;color:var(--muted);text-transform:uppercase}
-.st.r .tv{color:var(--red)}.st.g .tv{color:var(--gold)}.st.c .tv{color:var(--cyan)}.st.gr .tv{color:var(--green)}.st.p .tv{color:var(--purple)}
+/* ── CMDS GRID ── */
+.cmd-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.cmd-item{background:rgba(0,0,0,.2);border:1px solid rgba(255,255,255,.05);border-radius:10px;padding:10px 14px}
+.cmd-name{font-family:'Syne',sans-serif;font-size:.82rem;font-weight:700;color:var(--gold2)}
+.cmd-desc{font-size:.75rem;color:var(--dim);margin-top:2px}
 
-/* TABLE */
-.tw2{overflow-x:auto;border-radius:var(--r);border:1px solid var(--b)}
-table{width:100%;border-collapse:collapse}
-thead tr{background:var(--bg3);border-bottom:1px solid var(--b)}
-th{font-family:var(--fm);font-size:.55rem;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;padding:.65rem .9rem;text-align:left;white-space:nowrap}
-tbody tr{border-bottom:1px solid var(--b);transition:background .1s}
-tbody tr:last-child{border-bottom:none}
-tbody tr:hover{background:var(--s2)}
-td{font-size:.78rem;color:var(--muted);padding:.55rem .9rem;vertical-align:middle}
-td b,td strong{color:var(--text)}
-.mono{font-family:var(--fm)}
+/* ── LINKS ── */
+.link-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:20px}
+.link{display:flex;align-items:center;gap:10px;background:rgba(0,0,0,.2);border:1px solid rgba(255,255,255,.07);
+  border-radius:10px;padding:12px 14px;text-decoration:none;color:var(--dim);font-size:.85rem;transition:all .2s}
+.link:hover{border-color:var(--gold);color:var(--gold);background:rgba(201,168,76,.05)}
+.link-icon{font-size:1.1rem}
 
-/* MODAL */
-.ov{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:900;display:none;align-items:center;justify-content:center;padding:1rem;backdrop-filter:blur(4px)}
-.ov.open{display:flex;animation:fi .22s ease}
-.modal{background:var(--bg3);border:1px solid var(--b2);border-radius:16px;padding:1.85rem;max-width:450px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 24px 60px rgba(0,0,0,.5);position:relative}
-.modal h3{font-family:var(--fn);font-size:1.1rem;font-weight:700;letter-spacing:1px;margin-bottom:1.1rem}
-.mx{position:absolute;top:.9rem;right:.9rem;background:none;border:none;color:var(--muted);cursor:pointer;font-size:.95rem;transition:color .18s}
-.mx:hover{color:var(--red)}
-@keyframes fi{from{opacity:0}to{opacity:1}}
+/* ── FOOTER ── */
+footer{text-align:center;color:var(--dim);font-size:.78rem;margin-top:48px;padding-top:24px;border-top:1px solid rgba(255,255,255,.06)}
+footer span{color:rgba(255,255,255,.3)}
 
-/* KEY BOX */
-.kbox{background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.2);border-radius:10px;padding:1.1rem;text-align:center;margin-top:.7rem}
-.kval{font-family:var(--fm);font-size:.85rem;color:var(--gold);letter-spacing:2px;cursor:pointer;user-select:all;word-break:break-all;transition:opacity .18s}
-.kval:hover{opacity:.72}
-.kh{font-family:var(--fm);font-size:.52rem;color:var(--faint);margin-top:.28rem}
+/* ── SPINNER ── */
+.spin{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.2);
+  border-top-color:rgba(255,255,255,.8);border-radius:50%;animation:rot .7s linear infinite;vertical-align:middle;margin-right:7px}
+@keyframes rot{to{transform:rotate(360deg)}}
 
-/* ADMIN */
-.ag{display:grid;grid-template-columns:200px 1fr;gap:1.1rem}
-.aside{background:var(--s1);border:1px solid var(--b);border-radius:var(--r);padding:.85rem;height:fit-content;position:sticky;top:108px}
-.aside h3{font-family:var(--fm);font-size:.55rem;font-weight:700;letter-spacing:2px;color:var(--muted);text-transform:uppercase;padding:.3rem .45rem;margin-bottom:.32rem}
-.an{display:flex;align-items:center;gap:.52rem;padding:.52rem .68rem;border-radius:7px;font-size:.8rem;cursor:pointer;transition:all .16s;color:var(--muted);border:none;background:none;width:100%;text-align:left}
-.an:hover{background:var(--s2);color:var(--text)}
-.an.on{background:var(--rs);color:var(--red);border:1px solid rgba(232,25,44,.16)}
-.an i{width:14px;text-align:center;font-size:.72rem}
-.as{display:none}
-.as.on{display:block;animation:fu .26s ease}
-@media(max-width:680px){.ag{grid-template-columns:1fr}.aside{position:relative;top:0}}
-
-/* SECTION HEADER */
-.sh{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.1rem;flex-wrap:wrap;gap:.45rem}
-.st2{font-family:var(--fn);font-size:1.4rem;font-weight:700;letter-spacing:2px;display:flex;align-items:center;gap:.52rem}
-.dot{width:9px;height:9px;border-radius:50%;background:var(--red);box-shadow:0 0 8px var(--red);flex-shrink:0}
-.dot.g{background:var(--gold);box-shadow:0 0 8px var(--gold)}
-.dot.c{background:var(--cyan);box-shadow:0 0 8px var(--cyan)}
-.dot.gr{background:var(--green);box-shadow:0 0 8px var(--green)}
-.dot.p{background:var(--purple);box-shadow:0 0 8px var(--purple)}
-
-/* MISC */
-.dv{height:1px;background:var(--b);margin:1rem 0}
-.nh{font-family:var(--fm);font-size:.54rem;color:var(--faint);margin-top:.26rem;display:flex;align-items:center;gap:.28rem}
-.lrow{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.55rem}
-.lb{font-family:var(--fm);font-size:.54rem;letter-spacing:.8px;padding:.2rem .56rem;border-radius:6px;border:1px solid var(--b);color:var(--muted);text-decoration:none;transition:all .16s;text-transform:uppercase}
-.lb.wa{border-color:rgba(37,211,102,.3);color:#25d366}.lb.wa:hover{background:rgba(37,211,102,.08)}
-.lb.tg{border-color:rgba(0,136,204,.3);color:#0088cc}.lb.tg:hover{background:rgba(0,136,204,.08)}
-.lb.gh{border-color:rgba(240,246,252,.2);color:#f0f6fc}.lb.gh:hover{background:rgba(240,246,252,.06)}
-.spin{width:16px;height:16px;border:2px solid rgba(255,255,255,.2);border-top-color:#fff;border-radius:50%;animation:sp .65s linear infinite;flex-shrink:0}
-@keyframes sp{to{transform:rotate(360deg)}}
-.toast{position:fixed;bottom:1.3rem;left:50%;transform:translateX(-50%) translateY(80px);background:var(--bg3);border:1px solid rgba(232,25,44,.35);color:var(--text);font-family:var(--fm);font-size:.66rem;padding:.58rem 1.25rem;border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,.5);z-index:9999;transition:transform .26s;pointer-events:none;white-space:nowrap}
-.toast.on{transform:translateX(-50%) translateY(0)}
-.toast.ok{border-color:rgba(16,185,129,.35)}
-.toast.er{border-color:rgba(232,25,44,.5)}
-.toast.in{border-color:rgba(6,182,212,.35)}
-
-/* LOGIN */
-.lw{max-width:340px;margin:3rem auto}
-.lh{text-align:center;margin-bottom:1.6rem}
-.lh h2{font-family:var(--fn);font-size:1.6rem;font-weight:700;letter-spacing:2px}
-.lh p{font-family:var(--fm);font-size:.58rem;letter-spacing:2px;color:var(--muted);margin-top:.28rem}
-.lc{background:var(--s1);border:1px solid var(--b);border-radius:var(--r);padding:1.6rem}
-
-/* DEPLOY CARDS */
-.dg{display:grid;grid-template-columns:repeat(auto-fill,minmax(185px,1fr));gap:.88rem;margin-top:.7rem}
-.dc{background:var(--s2);border:1px solid var(--b);border-radius:var(--r);padding:1.05rem;transition:border-color .18s}
-.dc:hover{border-color:rgba(232,25,44,.25)}
-.dc .di{font-size:1.45rem;margin-bottom:.32rem}
-.dc h3{font-family:var(--fn);font-size:.88rem;font-weight:700;letter-spacing:1px;margin-bottom:.18rem}
-.dc p{font-size:.68rem;color:var(--muted);margin-bottom:.45rem;line-height:1.5}
-.dc a{font-family:var(--fm);font-size:.54rem;background:var(--red);color:#fff;padding:.18rem .52rem;border-radius:5px;text-decoration:none;display:inline-block}
-
-footer{border-top:1px solid var(--b);background:var(--bg2);padding:1.2rem;text-align:center;margin-top:3rem;position:relative;z-index:1}
-footer p{font-family:var(--fm);font-size:.56rem;color:var(--faint);letter-spacing:.5px}
-footer a{color:var(--red);text-decoration:none}
+@media(max-width:560px){
+  .stats{grid-template-columns:1fr 1fr}.stat:last-child{grid-column:span 2}
+  .cmd-grid{grid-template-columns:1fr}.link-row{grid-template-columns:1fr}
+  h1{font-size:2.4rem}
+}
 </style>
 </head>
 <body>
+<div class="blob blob-1"></div>
+<div class="blob blob-2"></div>
 
-<header>
-  <div class="logo" onclick="sp('home')">
-    <div class="logo-i">🔥</div>
-    <div>
-      <div class="logo-n">RED<b>X</b>BOT302 <span style="font-size:.65rem;opacity:.48">MINI</span></div>
-      <div class="logo-s">By Abdul Rehman Rajpoot · +923009842133</div>
+<div class="wrap">
+  <header>
+    <div class="logo-row">
+      <div class="logo">REDXBOT302</div>
+      <div class="status-pill"><span class="pulse"></span><span id="srv-status">Connecting</span></div>
     </div>
-  </div>
-  <div class="hn">
-    <div id="cb" class="cb"><span class="pu"></span><span id="ct">Offline</span></div>
-    <a class="ha" href="https://chat.whatsapp.com/LhSmx2SeXX75r8I2bxsNDo" target="_blank">WA</a>
-    <a class="ha" href="https://t.me/TeamRedxhacker2" target="_blank">TG</a>
-    <a class="ha" href="https://github.com/AbdulRehman19721986/REDXBOT-MD" target="_blank">GH</a>
-  </div>
-</header>
+    <div class="eyebrow">WhatsApp MD Bot — v6.0.0</div>
+    <h1>Connect Your<br/><em>WhatsApp Bot</em></h1>
+    <p class="subtitle">Pair code only — no QR, no session file. Enter your number and get a 8-digit code in seconds.</p>
+  </header>
 
-<nav class="nav">
-  <button class="nb on"  id="t-home"   onclick="sp('home')">  <i class="fa fa-home"></i> Home</button>
-  <button class="nb"     id="t-pair"   onclick="sp('pair')">  <i class="fa fa-mobile-screen-button"></i> Pair Bot</button>
-  <button class="nb"     id="t-dash"   onclick="sp('dash')">  <i class="fa fa-key"></i> My Dashboard</button>
-  <button class="nb"     id="t-status" onclick="sp('status')"><i class="fa fa-chart-line"></i> Status</button>
-  <button class="nb"     id="t-deploy" onclick="sp('deploy')"><i class="fa fa-cloud"></i> Deploy</button>
-  <button class="nb at"  id="t-admin"  onclick="sp('admin')"> <i class="fa fa-shield-halved"></i> Admin</button>
-</nav>
-
-<div class="pw">
-
-<!-- HOME -->
-<div class="pg on" id="pg-home">
-  <div class="hero">
-    <div class="heye">Pakistan's #1 WhatsApp Bot</div>
-    <h1>REDXBOT302</h1>
-    <p class="hero-s">No SESSION_ID needed — deploy, enter your number, pair in seconds.</p>
-    <div class="hst">
-      <div class="hs"><div class="v" id="h-c">—</div><div class="l">Commands</div></div>
-      <div class="hs"><div class="v" id="h-u">0</div><div class="l">Total Users</div></div>
-      <div class="hs"><div class="v" id="h-up">0s</div><div class="l">Uptime</div></div>
-      <div class="hs"><div class="v" id="h-p">0</div><div class="l">Pairs</div></div>
-    </div>
-  </div>
-  <div class="g2">
-    <div class="card f">
-      <h2>📱 QUICK PAIR</h2>
-      <p style="margin-bottom:.9rem">Enter your WhatsApp number to pair instantly.</p>
-      <div class="fld">
-        <input type="tel" id="qn" placeholder="923001234567" maxlength="15" oninput="this.value=this.value.replace(/\D/g,'')" onkeypress="if(event.key==='Enter')pair('q')"/>
-        <div class="nh"><i class="fa fa-info-circle"></i> Country code + number, no + or spaces</div>
-      </div>
-      <div id="qe" class="ebox"></div>
-      <button class="btn" id="qb" onclick="pair('q')"><i class="fa fa-key"></i> GET PAIRING CODE</button>
-      <div class="cbox" id="qcb">
-        <div class="clbl">Your Pairing Code — Enter in WhatsApp</div>
-        <span class="cval" id="qc" onclick="cc('qc')">----</span>
-        <div class="ccpy">📋 Click code to copy</div>
-        <div class="tw"><div class="tb" id="qtb" style="width:100%"></div></div>
-        <div class="tr"><span id="qtt">60s</span><span></span></div>
-      </div>
-      <div class="okb" id="qok"><div class="ic">✅</div><div><h4>Bot Connected!</h4><p id="qokt">Your bot is live.</p></div></div>
-    </div>
-    <div class="card cy f">
-      <h2>🤖 BOT STATUS</h2>
-      <div style="display:flex;flex-direction:column;gap:.48rem;margin-top:.55rem">
-        <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:.78rem;color:var(--muted)">Connection</span><span id="sc" class="badge off">OFFLINE</span></div>
-        <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:.78rem;color:var(--muted)">Bot Number</span><span class="mono" id="sn" style="font-size:.72rem">—</span></div>
-        <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:.78rem;color:var(--muted)">Mode</span><span id="sm" class="badge cy">PUBLIC</span></div>
-        <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:.78rem;color:var(--muted)">Deploy ID</span><span class="mono" id="sd" style="font-size:.64rem;color:var(--cyan)">—</span></div>
-        <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:.78rem;color:var(--muted)">Platform</span><span id="sp2" style="font-size:.76rem;color:var(--gold)">—</span></div>
-      </div>
-      <div class="lrow">
-        <a class="lb wa" href="https://chat.whatsapp.com/LhSmx2SeXX75r8I2bxsNDo" target="_blank">WhatsApp</a>
-        <a class="lb tg" href="https://t.me/TeamRedxhacker2" target="_blank">Telegram</a>
-        <a class="lb gh" href="https://github.com/AbdulRehman19721986/REDXBOT-MD" target="_blank">GitHub</a>
-      </div>
-    </div>
-    <div class="card go f full">
-      <h2>⚡ HOW TO PAIR — 5 Steps, Under 60 Seconds</h2>
-      <div class="steps" style="margin-top:.7rem">
-        <div class="step"><b>Deploy</b> to Heroku, Railway, or Render — or run locally with <code style="background:var(--rs);padding:.08rem .28rem;border-radius:3px;font-family:var(--fm);font-size:.72rem">npm start</code></div>
-        <div class="step">Open this page in your browser at your deployed URL</div>
-        <div class="step">Enter your WhatsApp number in <b>international format</b> e.g. <code style="background:var(--rs);padding:.08rem .28rem;border-radius:3px;font-family:var(--fm);font-size:.72rem">923001234567</code></div>
-        <div class="step">Click <b>Get Pairing Code</b> — code appears in ~5 seconds</div>
-        <div class="step">WhatsApp → <b>Settings → Linked Devices → Link a Device → Link with phone number</b> → Enter code → Bot connects! 🎉</div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- PAIR -->
-<div class="pg" id="pg-pair">
-  <div class="sh">
-    <div class="st2"><span class="dot"></span> PAIR YOUR BOT</div>
-    <span id="pc" class="chip in">Waiting for number</span>
-  </div>
-  <div class="g2">
-    <div class="card f">
-      <h2>📱 Get Pairing Code</h2>
-      <p style="margin-bottom:1rem">Code appears in ~5 seconds. Enter it in WhatsApp within 60 seconds.</p>
-      <div class="fld">
-        <label>WhatsApp Number</label>
-        <input type="tel" id="pn" placeholder="923001234567" maxlength="15" oninput="this.value=this.value.replace(/\D/g,'')" onkeypress="if(event.key==='Enter')pair('m')"/>
-        <div class="nh"><i class="fa fa-info-circle"></i> No +, no spaces. Country code first.</div>
-      </div>
-      <div id="pe" class="ebox"></div>
-      <button class="btn" id="pb" onclick="pair('m')"><i class="fa fa-key"></i> GET PAIRING CODE</button>
-      <button class="btn out" onclick="doLogout()" style="margin-top:.5rem"><i class="fa fa-right-from-bracket"></i> LOGOUT &amp; RESET SESSION</button>
-      <div class="dv"></div>
-      <div class="cbox" id="pcb">
-        <div class="clbl">Your Pairing Code — Enter in WhatsApp</div>
-        <span class="cval" id="pcode" onclick="cc('pcode')">----</span>
-        <div class="ccpy">📋 Click code to copy to clipboard</div>
-        <div class="tw"><div class="tb" id="ptb" style="width:100%"></div></div>
-        <div class="tr"><span id="ptt">60s remaining</span><span></span></div>
-      </div>
-      <div class="okb" id="pok"><div class="ic">✅</div><div><h4>Bot Connected!</h4><p id="pokt">Your bot is live.</p></div></div>
-
-      <!-- Deploy Key display -->
-      <div style="margin-top:1rem">
-        <div style="font-family:var(--fm);font-size:.55rem;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:.32rem">Your Deploy ID &amp; Key (shown after connecting)</div>
-        <div style="background:var(--s3);border:1px solid var(--b2);border-radius:8px;padding:.8rem">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.4rem">
-            <span style="font-family:var(--fm);font-size:.56rem;color:var(--muted)">Deploy ID</span>
-            <span class="mono" id="pdid" style="font-size:.72rem;color:var(--cyan);cursor:pointer" onclick="cpy(g('pdid').textContent)">Loading...</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;align-items:center">
-            <span style="font-family:var(--fm);font-size:.56rem;color:var(--muted)">Your Key</span>
-            <span id="pkey" style="font-family:var(--fm);font-size:.62rem;color:var(--gold);cursor:pointer" onclick="cpy(g('pkey').textContent)">Pair bot to see your key</span>
-          </div>
-          <div style="font-family:var(--fm);font-size:.5rem;color:var(--faint);margin-top:.38rem">🔒 Keep your key private — use it in "My Dashboard" to manage your bot</div>
-        </div>
-      </div>
-    </div>
-    <div style="display:flex;flex-direction:column;gap:1.1rem">
-      <div class="card cy f">
-        <h2>📲 WhatsApp Steps</h2>
-        <div class="steps" style="margin-top:.65rem">
-          <div class="step">Open <b>WhatsApp</b> on your phone</div>
-          <div class="step"><b>Settings → Linked Devices</b></div>
-          <div class="step"><b>Link a Device</b></div>
-          <div class="step"><b>"Link with phone number instead"</b></div>
-          <div class="step">Enter the <b>8-digit code</b> fast — it expires in 60s!</div>
-        </div>
-      </div>
-      <div class="card go f">
-        <h2>💡 Troubleshooting</h2>
-        <div class="steps" style="margin-top:.5rem">
-          <div class="step"><i class="fa fa-clock"></i><span><b>Code expired?</b> Click Get Pairing Code again</span></div>
-          <div class="step"><i class="fa fa-wifi"></i><span><b>Heroku slow?</b> First wake ~20-30s — just wait, don't click again</span></div>
-          <div class="step"><i class="fa fa-triangle-exclamation"></i><span><b>Code incorrect?</b> Enter within 60 seconds</span></div>
-          <div class="step"><i class="fa fa-rotate"></i><span><b>Already connected?</b> Logout &amp; Reset, then re-pair</span></div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- MY DASHBOARD (user deploy key) -->
-<div class="pg" id="pg-dash">
-  <div class="sh">
-    <div class="st2"><span class="dot g"></span> MY DASHBOARD</div>
-  </div>
-  <div class="g2" style="margin-bottom:1.2rem">
-    <div class="card f">
-      <h2>🔑 Enter Your Deploy Key</h2>
-      <p style="margin-bottom:.9rem">Your deploy key was sent to you when you first paired. It lets you view and manage only your bot.</p>
-      <div class="fld">
-        <label>Deploy Key</label>
-        <input type="password" id="dk" placeholder="Your secret deploy key..." onkeypress="if(event.key==='Enter')loadDash()"/>
-      </div>
-      <div id="dke" class="ebox"></div>
-      <button class="btn go" onclick="loadDash()"><i class="fa fa-unlock"></i> OPEN MY DASHBOARD</button>
-    </div>
-    <div class="card go f">
-      <h2>💡 What is the Deploy Key?</h2>
-      <div class="steps" style="margin-top:.5rem">
-        <div class="step">Your deploy key is a <b>unique secret</b> generated when you first deployed</div>
-        <div class="step">It was sent to your WhatsApp when the <b>bot first connected</b></div>
-        <div class="step">Only you and the admin can see your deployment info</div>
-        <div class="step">Use it here to <b>view status, change settings, and logout</b> your bot</div>
-      </div>
-    </div>
+  <div class="stats">
+    <div class="stat"><div class="stat-n" id="s-users">—</div><div class="stat-l">Total Users</div></div>
+    <div class="stat"><div class="stat-n" id="s-cmds">500+</div><div class="stat-l">Commands</div></div>
+    <div class="stat"><div class="stat-n" id="s-up">—</div><div class="stat-l">Uptime</div></div>
   </div>
 
-  <!-- Dashboard content (hidden until key entered) -->
-  <div id="dash-content" style="display:none">
-    <div class="sh" style="margin-top:1rem">
-      <div style="font-family:var(--fn);font-size:1.1rem;font-weight:700;letter-spacing:1px">My Bot Info</div>
-      <div class="brow">
-        <button class="btn sm cy" onclick="loadDash()"><i class="fa fa-rotate"></i> Refresh</button>
-        <button class="btn sm dg" onclick="userLogout()"><i class="fa fa-right-from-bracket"></i> Logout My Bot</button>
-      </div>
-    </div>
-    <div class="g2" style="margin-bottom:1.1rem">
-      <div class="card f">
-        <h2>📊 Bot Status</h2>
-        <table style="margin-top:.55rem;width:100%"><tbody>
-          <tr><td style="color:var(--muted)">Status</td><td><span id="dc-conn" class="badge off">Offline</span></td></tr>
-          <tr><td style="color:var(--muted)">Numbers</td><td><span id="dc-nums" class="mono" style="font-size:.72rem">—</span></td></tr>
-          <tr><td style="color:var(--muted)">Pairs Done</td><td><b id="dc-pairs">0</b></td></tr>
-          <tr><td style="color:var(--muted)">Platform</td><td><b id="dc-plat" style="color:var(--gold)">—</b></td></tr>
-          <tr><td style="color:var(--muted)">Created</td><td id="dc-created" style="font-size:.72rem">—</td></tr>
-        </tbody></table>
-      </div>
-      <div class="card f">
-        <h2>⚙️ My Settings</h2>
-        <div class="fld"><label>Bot Name</label><input type="text" id="ds-name" placeholder="🔥 REDXBOT302 🔥"/></div>
-        <div class="fld"><label>Owner Name</label><input type="text" id="ds-owner" placeholder="Your name"/></div>
-        <div class="fld"><label>Prefix</label><input type="text" id="ds-pfx" placeholder="." maxlength="3"/></div>
-        <div class="fld"><label>Mode</label><select id="ds-mode"><option value="public">Public</option><option value="private">Private</option></select></div>
-        <div id="ds-msg" class="ebox"></div>
-        <button class="btn go" onclick="saveSettings()" style="margin-top:.4rem"><i class="fa fa-save"></i> Save Settings</button>
-      </div>
-    </div>
-    <!-- Deploy Key reminder -->
-    <div class="card go f">
-      <h2>🔑 Your Deploy Key</h2>
-      <p style="margin-bottom:.6rem">Keep this key private. Share it with no one. Use it to access this dashboard.</p>
-      <div class="kbox"><div class="kval" id="dc-key" onclick="cpy(this.textContent)">—</div><div class="kh">Click to copy · Never share this key</div></div>
-    </div>
+  <div class="tabs">
+    <button class="tab on" onclick="tab('pair',this)">🔗 Pair Bot</button>
+    <button class="tab" onclick="tab('check',this)">🔍 Check Status</button>
+    <button class="tab" onclick="tab('guide',this)">📖 Guide</button>
+    <button class="tab" onclick="tab('cmds',this)">⚡ Commands</button>
   </div>
-</div>
 
-<!-- STATUS -->
-<div class="pg" id="pg-status">
-  <div class="sh">
-    <div class="st2"><span class="dot c"></span> BOT STATUS</div>
-    <button class="btn sm cy" onclick="rs()"><i class="fa fa-rotate"></i> Refresh</button>
-  </div>
-  <div class="g4" style="margin-bottom:1.1rem">
-    <div class="st r"><div class="ti">🔥</div><div class="tv" id="ss-c">—</div><div class="tl">Commands</div></div>
-    <div class="st g"><div class="ti">👥</div><div class="tv" id="ss-u">0</div><div class="tl">Total Users</div></div>
-    <div class="st c"><div class="ti">🔗</div><div class="tv" id="ss-p">0</div><div class="tl">Pair Count</div></div>
-    <div class="st gr"><div class="ti">⏱️</div><div class="tv" id="ss-up">0s</div><div class="tl">Uptime</div></div>
-  </div>
-  <div class="g2">
-    <div class="card f">
-      <h2>⚙️ Bot Info</h2>
-      <table style="margin-top:.55rem;width:100%"><tbody>
-        <tr><td style="color:var(--muted)">Bot Name</td><td><b id="ii-n">—</b></td></tr>
-        <tr><td style="color:var(--muted)">Number</td><td><span class="mono" id="ii-num">—</span></td></tr>
-        <tr><td style="color:var(--muted)">Mode</td><td><span id="ii-m" class="badge cy">—</span></td></tr>
-        <tr><td style="color:var(--muted)">Platform</td><td><b id="ii-pl" style="color:var(--gold)">—</b></td></tr>
-        <tr><td style="color:var(--muted)">Deploy ID</td><td><span class="mono" id="ii-d" style="color:var(--cyan);font-size:.7rem">—</span></td></tr>
-        <tr><td style="color:var(--muted)">Session</td><td><span id="ii-s" class="badge off">None</span></td></tr>
-      </tbody></table>
-    </div>
-    <div class="card f">
-      <h2>👑 Owner Info</h2>
-      <table style="margin-top:.55rem;width:100%"><tbody>
-        <tr><td style="color:var(--muted)">Owner</td><td><b id="ii-o">Abdul Rehman Rajpoot</b></td></tr>
-        <tr><td style="color:var(--muted)">Number</td><td><span class="mono">923009842133</span></td></tr>
-        <tr><td style="color:var(--muted)">Co-Owner</td><td><b id="ii-co">Muzamil Khan</b></td></tr>
-        <tr><td style="color:var(--muted)">Prefix</td><td><b id="ii-pfx">.</b></td></tr>
-        <tr><td style="color:var(--muted)">WA Group</td><td><a href="https://chat.whatsapp.com/LhSmx2SeXX75r8I2bxsNDo" target="_blank" style="color:var(--green)">Join Group</a></td></tr>
-        <tr><td style="color:var(--muted)">Telegram</td><td><a href="https://t.me/TeamRedxhacker2" target="_blank" style="color:var(--cyan)">@TeamRedxhacker2</a></td></tr>
-      </tbody></table>
-    </div>
-  </div>
-</div>
+  <!-- PAIR -->
+  <div id="pane-pair" class="pane on">
+    <div class="card">
+      <div class="card-title">Step 1 — Generate Pairing Code</div>
+      <input type="tel" id="phone" placeholder="Phone with country code  e.g. 923001234567"/>
+      <button class="btn btn-fire" onclick="doPair()">Generate Pairing Code</button>
+      <div class="alert" id="pair-alert"></div>
 
-<!-- DEPLOY -->
-<div class="pg" id="pg-deploy">
-  <div class="sh"><div class="st2"><span class="dot g"></span> DEPLOY GUIDES</div></div>
-  <div class="dg">
-    <div class="dc"><div class="di">🟣</div><h3>Heroku</h3><p>Best 24/7 uptime. Free eco dynos. Fully optimized.</p><a href="https://heroku.com" target="_blank">Deploy →</a></div>
-    <div class="dc"><div class="di">🚄</div><h3>Railway</h3><p>Fast deploys. Free tier available.</p><a href="https://railway.app" target="_blank">Deploy →</a></div>
-    <div class="dc"><div class="di">🎨</div><h3>Render</h3><p>Auto-deploy on push. Free tier.</p><a href="https://render.com" target="_blank">Deploy →</a></div>
-    <div class="dc"><div class="di">💻</div><h3>Local/VPS</h3><p>Run on any machine with npm start.</p><a href="https://github.com/AbdulRehman19721986/REDXBOT-MD" target="_blank">GitHub →</a></div>
-  </div>
-  <div class="card f" style="margin-top:1.1rem">
-    <h2>🔧 Environment Variables</h2>
-    <div class="tw2" style="margin-top:.7rem">
-      <table>
-        <thead><tr><th>Variable</th><th>Default</th><th>Description</th></tr></thead>
-        <tbody>
-          <tr><td><code class="mono" style="color:var(--cyan)">BOT_NAME</code></td><td class="mono">🔥 REDXBOT302 🔥</td><td>Bot display name</td></tr>
-          <tr><td><code class="mono" style="color:var(--cyan)">OWNER_NUMBER</code></td><td class="mono">923009842133</td><td>Owner WhatsApp number</td></tr>
-          <tr><td><code class="mono" style="color:var(--cyan)">PREFIX</code></td><td class="mono">.</td><td>Command prefix</td></tr>
-          <tr><td><code class="mono" style="color:var(--cyan)">BOT_MODE</code></td><td class="mono">public</td><td>public or private</td></tr>
-          <tr><td><code class="mono" style="color:var(--cyan)">DEPLOY_ID</code></td><td class="mono">auto-generated</td><td>Custom deploy ID (optional)</td></tr>
-          <tr><td><code class="mono" style="color:var(--cyan)">ADMIN_USERNAME</code></td><td class="mono">redx</td><td>Admin panel username</td></tr>
-          <tr><td><code class="mono" style="color:var(--cyan)">ADMIN_PASSWORD</code></td><td class="mono">redx</td><td>Admin panel password</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-</div>
-
-<!-- ADMIN -->
-<div class="pg" id="pg-admin">
-  <div id="al" class="lw">
-    <div class="lh"><h2>🛡️ ADMIN PANEL</h2><p>REDXBOT302 Control Center</p></div>
-    <div class="lc">
-      <div class="fld"><label>Username</label><input type="text" id="au" placeholder="redx" autocomplete="username"/></div>
-      <div class="fld"><label>Password</label><input type="password" id="ap" placeholder="••••••" autocomplete="current-password" onkeypress="if(event.key==='Enter')adminLogin()"/></div>
-      <div id="ale" class="ebox" style="margin-bottom:.6rem"></div>
-      <button class="btn go" onclick="adminLogin()"><i class="fa fa-right-to-bracket"></i> LOGIN TO ADMIN</button>
-      <div style="font-family:var(--fm);font-size:.52rem;color:var(--faint);text-align:center;margin-top:.6rem">Default: redx / redx</div>
-    </div>
-  </div>
-  <div id="ad" style="display:none">
-    <div class="sh">
-      <div class="st2"><span class="dot g"></span> ADMIN PANEL</div>
-      <div class="brow">
-        <button class="btn sm cy" onclick="loadAov()"><i class="fa fa-rotate"></i> Refresh</button>
-        <button class="btn sm dg" onclick="adminLogout()"><i class="fa fa-right-from-bracket"></i> Logout</button>
-      </div>
-    </div>
-    <div class="g4" style="margin-bottom:1.1rem">
-      <div class="st g"><div class="ti">🌐</div><div class="tv" id="aa-d">0</div><div class="tl">Deploys</div></div>
-      <div class="st gr"><div class="ti">🔗</div><div class="tv" id="aa-p">0</div><div class="tl">Total Pairs</div></div>
-      <div class="st c"><div class="ti">👥</div><div class="tv" id="aa-u">0</div><div class="tl">Users</div></div>
-      <div class="st r"><div class="ti">⏱️</div><div class="tv" id="aa-up">0s</div><div class="tl">Uptime</div></div>
-    </div>
-    <div class="ag">
-      <div class="aside">
-        <h3>Navigation</h3>
-        <button class="an on"  onclick="asec('ov')">  <i class="fa fa-gauge"></i>Overview</button>
-        <button class="an"     onclick="asec('cn')">  <i class="fa fa-plug"></i>Connections</button>
-        <button class="an"     onclick="asec('dp')">  <i class="fa fa-server"></i>All Deploys</button>
-        <button class="an"     onclick="asec('sv')">  <i class="fa fa-network-wired"></i>Servers</button>
-        <button class="an"     onclick="asec('bc')">  <i class="fa fa-robot"></i>Bot Control</button>
-        <button class="an"     onclick="asec('st')">  <i class="fa fa-gear"></i>Settings</button>
-      </div>
-      <div>
-        <!-- Overview -->
-        <div class="as on" id="as-ov">
-          <div class="g2">
-            <div class="card f">
-              <h2>📊 System</h2>
-              <table style="margin-top:.5rem;width:100%"><tbody>
-                <tr><td style="color:var(--muted)">Platform</td><td><b id="ao-pl">—</b></td></tr>
-                <tr><td style="color:var(--muted)">Node.js</td><td><span class="mono" id="ao-nd">—</span></td></tr>
-                <tr><td style="color:var(--muted)">Version</td><td><span class="mono" id="ao-v">—</span></td></tr>
-                <tr><td style="color:var(--muted)">Uptime</td><td><span id="ao-up">—</span></td></tr>
-                <tr><td style="color:var(--muted)">Memory</td><td><span id="ao-mm">—</span></td></tr>
-                <tr><td style="color:var(--muted)">Admin</td><td><b id="ao-au" style="color:var(--gold)">—</b></td></tr>
-              </tbody></table>
-            </div>
-            <div class="card f">
-              <h2>🤖 Current Bot</h2>
-              <table style="margin-top:.5rem;width:100%"><tbody>
-                <tr><td style="color:var(--muted)">Connected</td><td><span id="ao-co" class="badge off">No</span></td></tr>
-                <tr><td style="color:var(--muted)">Number</td><td><span class="mono" id="ao-nu">—</span></td></tr>
-                <tr><td style="color:var(--muted)">Deploy ID</td><td><span class="mono" id="ao-di" style="color:var(--cyan);font-size:.68rem">—</span></td></tr>
-                <tr><td style="color:var(--muted)">Commands</td><td><b id="ao-cm">—</b></td></tr>
-                <tr><td style="color:var(--muted)">Connections</td><td><b id="ao-cn">0</b></td></tr>
-              </tbody></table>
-            </div>
+      <div class="code-wrap" id="code-wrap">
+        <div class="code-box">
+          <div class="code-label">Your Pairing Code</div>
+          <div class="code-val" id="code-val">— — — —</div>
+          <div class="code-hint">
+            Open WhatsApp → <strong>⋮ Menu</strong> → <strong>Linked Devices</strong> → <strong>Link a Device</strong> → Enter this code
           </div>
         </div>
-        <!-- Connections -->
-        <div class="as" id="as-cn">
-          <div class="sh" style="margin-bottom:.85rem">
-            <div style="font-family:var(--fn);font-size:1rem;font-weight:700">Active Connections</div>
-            <button class="btn sm cy" onclick="loadConns()"><i class="fa fa-rotate"></i></button>
-          </div>
-          <div class="tw2"><table><thead><tr><th>Number</th><th>Status</th></tr></thead><tbody id="cn-tb"><tr><td colspan="2" style="text-align:center;padding:1.4rem;color:var(--faint)">Loading...</td></tr></tbody></table></div>
-        </div>
-        <!-- Deploys -->
-        <div class="as" id="as-dp">
-          <div class="sh" style="margin-bottom:.85rem">
-            <div style="font-family:var(--fn);font-size:1rem;font-weight:700">All Deploys</div>
-            <button class="btn sm cy" onclick="loadAdeps()"><i class="fa fa-rotate"></i></button>
-          </div>
-          <div class="tw2"><table><thead><tr><th>Deploy ID</th><th>Key (hidden)</th><th>Platform</th><th>Pairs</th><th>Last Seen</th><th></th></tr></thead><tbody id="dp-tb"><tr><td colspan="6" style="text-align:center;padding:1.4rem;color:var(--faint)">Loading...</td></tr></tbody></table></div>
-        </div>
-        <!-- Servers -->
-        <div class="as" id="as-sv">
-          <div class="sh" style="margin-bottom:.85rem">
-            <div style="font-family:var(--fn);font-size:1rem;font-weight:700">Servers</div>
-            <button class="btn sm gn" onclick="openOv('modal-srv')"><i class="fa fa-plus"></i> Add</button>
-          </div>
-          <div class="tw2"><table><thead><tr><th>Name</th><th>Platform</th><th>URL</th><th>Added</th><th></th></tr></thead><tbody id="sv-tb"><tr><td colspan="5" style="text-align:center;padding:1.4rem;color:var(--faint)">No servers added</td></tr></tbody></table></div>
-        </div>
-        <!-- Bot Control -->
-        <div class="as" id="as-bc">
-          <div class="g2">
-            <div class="card f">
-              <h2>🤖 Controls</h2>
-              <div style="display:flex;flex-direction:column;gap:.55rem;margin-top:.7rem">
-                <button class="btn cy"  onclick="botAct('reload')"><i class="fa fa-rotate"></i> Reload Plugins</button>
-                <button class="btn go"  onclick="cfm('restart')"><i class="fa fa-power-off"></i> Restart Bot</button>
-                <button class="btn dg"  onclick="cfm('logout')"><i class="fa fa-right-from-bracket"></i> Force Logout All</button>
-              </div>
-            </div>
-            <div class="card go f">
-              <h2>⚠️ Notes</h2>
-              <div style="background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.16);border-radius:8px;padding:.65rem;font-size:.76rem;color:var(--muted);line-height:1.85;margin-top:.5rem">
-                <b style="color:var(--gold)">Reload</b> — Hot-reloads plugin files<br>
-                <b style="color:var(--gold)">Restart</b> — Restarts Node.js process<br>
-                <b style="color:var(--gold)">Force Logout</b> — Deletes all sessions
-              </div>
-            </div>
-          </div>
-        </div>
-        <!-- Settings -->
-        <div class="as" id="as-st">
-          <div class="g2">
-            <div class="card f">
-              <h2>🔐 Change Credentials</h2>
-              <p style="margin-bottom:.9rem;font-size:.78rem">Set env vars to persist across restarts.</p>
-              <div class="fld"><label>Current Password</label><input type="password" id="cr-c" placeholder="Current password"/></div>
-              <div class="fld"><label>New Username (optional)</label><input type="text" id="cr-u" placeholder="Leave blank to keep"/></div>
-              <div class="fld"><label>New Password (optional)</label><input type="password" id="cr-p" placeholder="Leave blank to keep"/></div>
-              <div id="cr-e" class="ebox" style="margin-bottom:.55rem"></div>
-              <button class="btn go" onclick="updCreds()"><i class="fa fa-lock"></i> Update</button>
-            </div>
-            <div class="card f">
-              <h2>💡 Tips</h2>
-              <div class="steps" style="margin-top:.45rem">
-                <div class="step">Set <code class="mono" style="font-size:.68rem;background:var(--rs);padding:.06rem .28rem;border-radius:3px">ADMIN_USERNAME</code> and <code class="mono" style="font-size:.68rem;background:var(--rs);padding:.06rem .28rem;border-radius:3px">ADMIN_PASSWORD</code> env vars to persist credentials</div>
-                <div class="step">Admin sessions expire after <b>24 hours</b></div>
-                <div class="step">User deploy keys persist in <code class="mono" style="font-size:.68rem;background:var(--rs);padding:.06rem .28rem;border-radius:3px">deploys.json</code></div>
-              </div>
-            </div>
-          </div>
+        <div class="id-box" id="id-box">
+          <div class="id-label">Your Deploy ID — Save This!</div>
+          <div class="id-val" id="id-val">—</div>
+          <div class="id-hint">The bot will also send this to you in WhatsApp. Use it in the Check Status tab.</div>
         </div>
       </div>
     </div>
   </div>
-</div>
 
-</div><!-- /pw -->
-
-<!-- MODAL: Add Server -->
-<div class="ov" id="modal-srv">
-  <div class="modal">
-    <button class="mx" onclick="closeOv('modal-srv')"><i class="fa fa-xmark"></i></button>
-    <h3>➕ Add Server</h3>
-    <div class="fld"><label>Name</label><input type="text" id="sn2" placeholder="My Heroku Server"/></div>
-    <div class="fld"><label>Platform</label><select id="spl"><option>Heroku</option><option>Railway</option><option>Render</option><option>VPS</option><option>Local</option><option>Other</option></select></div>
-    <div class="fld"><label>URL</label><input type="url" id="su" placeholder="https://your-app.herokuapp.com"/></div>
-    <div class="fld"><label>Description</label><input type="text" id="sd2" placeholder="Optional"/></div>
-    <div class="brow"><button class="btn gn" onclick="addSrv()"><i class="fa fa-plus"></i> Add</button><button class="btn sm out" onclick="closeOv('modal-srv')" style="width:auto">Cancel</button></div>
+  <!-- CHECK -->
+  <div id="pane-check" class="pane">
+    <div class="card">
+      <div class="card-title">Check by Deploy ID</div>
+      <input type="text" id="check-id" placeholder="REDXABCD1234" style="text-transform:uppercase;letter-spacing:.08em"/>
+      <button class="btn btn-fire" onclick="doCheck()">Check Status</button>
+      <div class="alert" id="check-alert"></div>
+    </div>
   </div>
-</div>
 
-<!-- MODAL: Confirm -->
-<div class="ov" id="modal-cf">
-  <div class="modal">
-    <button class="mx" onclick="closeOv('modal-cf')"><i class="fa fa-xmark"></i></button>
-    <h3 id="cf-t">Confirm</h3>
-    <p id="cf-m" style="color:var(--muted);margin-bottom:1.1rem"></p>
-    <div class="brow"><button class="btn dg" onclick="execCfm()"><i class="fa fa-check"></i> Confirm</button><button class="btn sm out" onclick="closeOv('modal-cf')" style="width:auto">Cancel</button></div>
+  <!-- GUIDE -->
+  <div id="pane-guide" class="pane">
+    <div class="card">
+      <div class="card-title">How to Deploy</div>
+      <div class="steps">
+        <div class="step"><div class="step-n">1</div><div class="step-t"><strong>Fork the repo</strong> — github.com/AbdulRehman19721986/REDXBOT-MD</div></div>
+        <div class="step"><div class="step-n">2</div><div class="step-t"><strong>Deploy to Railway / Render / Heroku</strong> — connect GitHub, set env vars</div></div>
+        <div class="step"><div class="step-n">3</div><div class="step-t"><strong>Set required env vars:</strong> OWNER_NUMBER, BOT_NAME, PREFIX, MENU_IMAGE</div></div>
+        <div class="step"><div class="step-n">4</div><div class="step-t"><strong>Visit your bot URL</strong> — enter phone number, get pairing code</div></div>
+        <div class="step"><div class="step-n">5</div><div class="step-t"><strong>Enter code in WhatsApp</strong> → Linked Devices → Link a Device</div></div>
+        <div class="step"><div class="step-n">6</div><div class="step-t"><strong>Type .menu</strong> — select a category number. Type .allmenu for all 500+ commands</div></div>
+        <div class="step"><div class="step-n">7</div><div class="step-t"><strong>Admin Panel</strong> — visit <code>/admin</code> on your bot URL (credentials in your env)</div></div>
+      </div>
+    </div>
+    <div class="link-row">
+      <a class="link" href="https://github.com/AbdulRehman19721986/REDXBOT-MD" target="_blank"><span class="link-icon">⭐</span>GitHub</a>
+      <a class="link" href="https://chat.whatsapp.com/LhSmx2SeXX75r8I2bxsNDo" target="_blank"><span class="link-icon">💬</span>WhatsApp Group</a>
+      <a class="link" href="https://t.me/TeamRedxhacker2" target="_blank"><span class="link-icon">📢</span>Telegram</a>
+      <a class="link" href="https://youtube.com/@rootmindtech" target="_blank"><span class="link-icon">▶️</span>YouTube</a>
+    </div>
   </div>
+
+  <!-- COMMANDS -->
+  <div id="pane-cmds" class="pane">
+    <div class="card">
+      <div class="card-title">Key Commands</div>
+      <div class="cmd-grid">
+        <div class="cmd-item"><div class="cmd-name">.menu</div><div class="cmd-desc">Numbered category menu</div></div>
+        <div class="cmd-item"><div class="cmd-name">.allmenu</div><div class="cmd-desc">All 500+ commands list</div></div>
+        <div class="cmd-item"><div class="cmd-name">.ai &lt;q&gt;</div><div class="cmd-desc">AI chat — Urdu/English/all</div></div>
+        <div class="cmd-item"><div class="cmd-name">.tts &lt;text&gt;</div><div class="cmd-desc">Text to voice (all languages)</div></div>
+        <div class="cmd-item"><div class="cmd-name">.gimage &lt;p&gt;</div><div class="cmd-desc">AI image generation</div></div>
+        <div class="cmd-item"><div class="cmd-name">.shayari</div><div class="cmd-desc">Urdu poetry with AI</div></div>
+        <div class="cmd-item"><div class="cmd-name">.shariyai &lt;q&gt;</div><div class="cmd-desc">Islamic AI guidance</div></div>
+        <div class="cmd-item"><div class="cmd-name">.vv</div><div class="cmd-desc">Reveal view-once media</div></div>
+        <div class="cmd-item"><div class="cmd-name">.anticall on</div><div class="cmd-desc">Block calls + custom msg</div></div>
+        <div class="cmd-item"><div class="cmd-name">.antidelete on</div><div class="cmd-desc">Catch deleted messages</div></div>
+        <div class="cmd-item"><div class="cmd-name">.ttt start</div><div class="cmd-desc">TicTacToe vs AI</div></div>
+        <div class="cmd-item"><div class="cmd-name">.movie &lt;n&gt;</div><div class="cmd-desc">Search & download movies</div></div>
+        <div class="cmd-item"><div class="cmd-name">.play &lt;song&gt;</div><div class="cmd-desc">Music with number select</div></div>
+        <div class="cmd-item"><div class="cmd-name">.status &lt;text&gt;</div><div class="cmd-desc">Post WhatsApp status</div></div>
+        <div class="cmd-item"><div class="cmd-name">.panel</div><div class="cmd-desc">Manage bot from chat</div></div>
+        <div class="cmd-item"><div class="cmd-name">.tagall</div><div class="cmd-desc">Mention all members</div></div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    REDXBOT302 v6 &nbsp;<span>•</span>&nbsp; By Abdul Rehman Rajpoot &nbsp;<span>•</span>&nbsp; 2026
+  </footer>
 </div>
-
-<div class="toast" id="toast"></div>
-
-<footer><p>🔥 <strong>REDXBOT302 MINI v5.0</strong> — By <a href="#">Abdul Rehman Rajpoot</a> · <a href="https://github.com/AbdulRehman19721986/REDXBOT-MD" target="_blank">GitHub</a> · <a href="https://t.me/TeamRedxhacker2" target="_blank">Telegram</a></p></footer>
 
 <script>
-const socket = io();
-let cfg={}, adTok=localStorage.getItem('at')||null, dKey='', deployId='', pendCfm=null, tInt=null, pBusy=false;
+const BASE = window.location.origin;
 
-/* SOCKET */
-socket.on('botStatus', handleBS);
-socket.on('statsUpdate', handleSt);
-socket.on('linked', d=>{ showConn(d.number||d.sessionId); fetchDeployInfo(); });
-socket.on('unlinked', ()=>{ updSt(false,''); });
-socket.on('loggedOut', ()=>{ toast('Bot logged out — re-pair','er'); updSt(false,''); });
-
-/* PAGES */
-function sp(n){
-  document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
-  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));
-  const pg=g('pg-'+n); if(pg)pg.classList.add('on');
-  const tb=g('t-'+n); if(tb)tb.classList.add('on');
-  if(n==='status')rs();
-  if(n==='admin')initAdmin();
+function tab(name, el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
+  document.querySelectorAll('.pane').forEach(p => p.classList.remove('on'));
+  el.classList.add('on');
+  document.getElementById('pane-' + name).classList.add('on');
 }
 
-async function init(){
-  try{
-    const r=await fetch('/api/config'); cfg=await r.json();
-    deployId=cfg.deployId||''; g('pdid').textContent=deployId||'—';
-    g('sp2').textContent=cfg.platform||'—'; g('sd').textContent=deployId;
-    g('ii-n').textContent=cfg.botName||'—'; g('ii-o').textContent=cfg.ownerName||'—';
-    g('ii-co').textContent=cfg.coOwner||'—'; g('ii-pfx').textContent=cfg.prefix||'.';
-    const si=g('ii-s'); if(si){si.className='badge '+(cfg.hasSession?'on':'off');si.textContent=cfg.hasSession?'Active':'None';}
-  }catch{}
-  rs();
+function showAlert(id, msg, type) {
+  const el = document.getElementById(id);
+  el.className = `alert show ${type}`;
+  el.innerHTML = msg;
 }
 
-async function rs(){
-  try{const r=await fetch('/api/status');const d=await r.json();handleSt(d);handleBS(d);}catch{}
-}
-
-function handleSt(d){
-  const up=v=>{const h=Math.floor(v/3600),m=Math.floor((v%3600)/60),s=v%60;return h?`${h}h ${m}m`:m?`${m}m ${s}s`:`${s}s`;};
-  const fmt=v=>v>=1000?(v/1000).toFixed(1)+'k':v;
-  sv('h-c',d.commands+'+'); sv('h-u',fmt(d.totalUsers)); sv('h-up',up(d.uptime||0)); sv('h-p',d.pairCount);
-  sv('ss-c',d.commands+'+'); sv('ss-u',fmt(d.totalUsers)); sv('ss-p',d.pairCount); sv('ss-up',up(d.uptime||0));
-  const im=g('ii-m'); if(im){im.textContent=(d.mode||'public').toUpperCase();im.className='badge '+(d.mode==='private'?'off':'cy');}
-  const sm2=g('sm'); if(sm2){sm2.textContent=(d.mode||'public').toUpperCase();}
-  if(d.platform)g('ii-pl').textContent=d.platform;
-  if(d.deployId)g('ii-d').textContent=d.deployId;
-  if(d.botName)g('ii-n').textContent=d.botName;
-  if(d.prefix)g('ii-pfx').textContent=d.prefix;
-}
-
-function handleBS(d){
-  updSt(d.connected||false, d.number||d.botNumber||'');
-  if(d.connected&&(d.number||d.botNumber)) showConn(d.number||d.botNumber);
-}
-
-function updSt(conn,num){
-  const cb2=g('cb'),ct=g('ct'); cb2.className='cb'+(conn?' on':''); ct.textContent=conn?'● Online':'Offline';
-  const sc2=g('sc'); if(sc2){sc2.className='badge '+(conn?'on':'off');sc2.textContent=conn?'ONLINE':'OFFLINE';}
-  sv('sn',num?'+'+num:'—');
-  if(conn){const si=g('ii-s');if(si){si.className='badge on';si.textContent='Active';} sv('ii-num','+'+num);}
-}
-
-function showConn(num){
-  updSt(true,num);
-  ['qok','pok'].forEach(id=>{const e=g(id);if(e)e.classList.add('on');});
-  sv('qokt','Connected as +'+num); sv('pokt','Bot live as +'+num);
-  const pc2=g('pc'); if(pc2){pc2.className='chip ok';pc2.textContent='✅ Connected';}
-  clearTimer();
-}
-
-async function fetchDeployInfo(){
-  try{
-    const r=await fetch('/api/status'); const d=await r.json();
-    if(d.deployId){ g('pdid').textContent=d.deployId; deployId=d.deployId; }
-  }catch{}
-}
-
-/* PAIRING */
-async function pair(ctx){
-  const nid=ctx==='q'?'qn':'pn';
-  const num=(g(nid)?.value||'').replace(/\D/g,'').trim();
-  if(!num||num.length<7){toast('Enter a valid phone number','er');return;}
-  if(pBusy){toast('Pairing in progress — please wait','in');return;}
-  pBusy=true; clearPairState();
-  const pb2=ctx==='m'?g('pb'):null, qb2=ctx==='q'?g('qb'):null;
-  if(pb2){pb2.disabled=true;pb2.innerHTML='<div class="spin"></div> Generating...';}
-  if(qb2){qb2.disabled=true;qb2.innerHTML='<div class="spin"></div> Getting...';}
-  const pc2=g('pc'); if(pc2){pc2.className='chip ld';pc2.textContent='⏳ Getting code...';}
-  try{
-    const r=await fetch('/api/pair',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({number:num})});
-    const d=await r.json();
-    if(!r.ok||d.error)throw new Error(d.error||'Failed');
-    const code=d.pairingCode||d.code||'----';
-    ['pcode','qc'].forEach(id=>{const e=g(id);if(e)e.textContent=code;});
-    ['pcb','qcb'].forEach(id=>{const e=g(id);if(e)e.classList.add('on');});
-    const pc3=g('pc'); if(pc3){pc3.className='chip ok';pc3.textContent='✅ Code Ready';}
-    toast('Code ready! Enter in WhatsApp.','ok'); startTimer(60);
-  }catch(err){
-    const msg=err.message||'Failed. Try again.';
-    ['pe','qe'].forEach(id=>{const e=g(id);if(e){e.innerHTML='<i class="fa fa-circle-exclamation"></i> '+msg;e.classList.add('on');}});
-    const pc4=g('pc'); if(pc4){pc4.className='chip er';pc4.textContent='❌ Error';}
-    toast(msg,'er');
-  }finally{
-    pBusy=false;
-    if(pb2){pb2.disabled=false;pb2.innerHTML='<i class="fa fa-key"></i> GET PAIRING CODE';}
-    if(qb2){qb2.disabled=false;qb2.innerHTML='<i class="fa fa-key"></i> GET PAIRING CODE';}
+async function loadStats() {
+  try {
+    const r = await fetch(BASE + '/api/status');
+    const d = await r.json();
+    document.getElementById('s-users').textContent = d.totalUsers || d.instances || '—';
+    document.getElementById('s-cmds').textContent  = (d.commands || 500) + '+';
+    const up = d.uptime || 0;
+    document.getElementById('s-up').textContent = up < 3600 ? Math.floor(up/60)+'m' : Math.floor(up/3600)+'h';
+    document.getElementById('srv-status').textContent = 'Online';
+  } catch {
+    document.getElementById('srv-status').textContent = 'Offline';
   }
 }
 
-function startTimer(secs){
-  clearTimer(); let rem=secs;
-  tInt=setInterval(()=>{
-    rem--;
-    const pct=(rem/secs)*100;
-    ['ptb','qtb'].forEach(id=>{const e=g(id);if(e){e.style.width=pct+'%';e.style.background=rem<15?'var(--red)':'linear-gradient(90deg,var(--red),var(--gold))';}});
-    ['ptt','qtt'].forEach(id=>{const e=g(id);if(e)e.textContent=rem+'s remaining';});
-    if(rem<=0){clearTimer();['ptt','qtt'].forEach(id=>{const e=g(id);if(e)e.textContent='Expired — get new code';});}
-  },1000);
-}
-function clearTimer(){if(tInt){clearInterval(tInt);tInt=null;}}
-function clearPairState(){
-  clearTimer();
-  ['pcb','qcb'].forEach(id=>{const e=g(id);if(e)e.classList.remove('on');});
-  ['pe','qe'].forEach(id=>{const e=g(id);if(e)e.classList.remove('on');});
-  ['qok','pok'].forEach(id=>{const e=g(id);if(e)e.classList.remove('on');});
-}
-function cc(id){const v=(g(id)?.textContent||'').replace(/-/g,'');if(!v||v==='----')return;navigator.clipboard.writeText(v).then(()=>toast('Code copied! '+v,'ok'));}
-function cpy(v){if(!v||v==='—'||v==='Pair bot to see your key')return;navigator.clipboard.writeText(v).then(()=>toast('Copied!','ok'));}
-
-async function doLogout(){
-  if(!confirm('Logout and delete session?'))return;
-  try{const r=await fetch('/api/logout',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})});const d=await r.json();if(d.success){toast('Logged out','ok');clearPairState();updSt(false,'');}}catch{toast('Logout failed','er');}
-}
-
-/* USER DASHBOARD */
-let currentKey='';
-async function loadDash(){
-  const key=g('dk')?.value.trim(); const e=g('dke'); e.classList.remove('on');
-  if(!key){e.innerHTML='<i class="fa fa-circle-exclamation"></i> Enter your deploy key';e.classList.add('on');return;}
-  currentKey=key;
-  try{
-    const r=await fetch('/api/user/info',{method:'POST',headers:{'Content-Type':'application/json','x-deploy-key':key},body:JSON.stringify({deployKey:key})});
-    const d=await r.json();
-    if(!r.ok)throw new Error(d.error||'Invalid key');
-    g('dash-content').style.display='block';
-    const dc=g('dc-conn'); dc.className='badge '+(d.connected?'on':'off');dc.textContent=d.connected?'Online':'Offline';
-    sv('dc-nums',d.numbers?.map(n=>'+'+n).join(', ')||'None');
-    sv('dc-pairs',d.pairCount||0);
-    sv('dc-plat',d.platform||'—');
-    g('dc-created').textContent=d.createdAt?new Date(d.createdAt).toLocaleString():'—';
-    // Pre-fill settings
-    if(g('ds-name'))g('ds-name').value=d.botName||'';
-    if(g('ds-owner'))g('ds-owner').value=d.ownerName||'';
-    if(g('ds-pfx'))g('ds-pfx').value=d.prefix||'.';
-    if(g('ds-mode'))g('ds-mode').value=d.mode||'public';
-    // Show key reminder
-    sv('dc-key',key);
-    toast('Dashboard loaded','ok');
-  }catch(err){e.innerHTML='<i class="fa fa-circle-exclamation"></i> '+err.message;e.classList.add('on');}
+async function doPair() {
+  const raw = document.getElementById('phone').value.trim().replace(/\D/g, '');
+  if (raw.length < 7) return showAlert('pair-alert', '❌ Enter a valid phone number with country code', 'err');
+  showAlert('pair-alert', '<span class="spin"></span>Generating pairing code…', 'info');
+  document.getElementById('code-wrap').className = 'code-wrap';
+  try {
+    const r = await fetch(BASE + '/api/pair', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ number: raw }),
+    });
+    const d = await r.json();
+    if (!d.success) return showAlert('pair-alert', '❌ ' + (d.error || 'Failed. Try again.'), 'err');
+    showAlert('pair-alert', '✅ Code ready! Enter it in WhatsApp → Linked Devices → Link a Device', 'ok');
+    // Format code in groups of 4
+    const raw_code = d.pairingCode || '--------';
+    document.getElementById('code-val').textContent = raw_code.match(/.{1,4}/g)?.join('-') || raw_code;
+    document.getElementById('code-wrap').className = 'code-wrap show';
+    if (d.deployId) {
+      document.getElementById('id-val').textContent  = d.deployId;
+      document.getElementById('id-box').className   = 'id-box show';
+    }
+  } catch (e) {
+    showAlert('pair-alert', '❌ Connection failed. Make sure bot is running.', 'err');
+  }
 }
 
-async function saveSettings(){
-  const key=currentKey; if(!key)return;
-  const body={botName:g('ds-name')?.value.trim(),ownerName:g('ds-owner')?.value.trim(),prefix:g('ds-pfx')?.value.trim(),mode:g('ds-mode')?.value};
-  const me=g('ds-msg'); me.classList.remove('on');
-  try{
-    const r=await fetch('/api/user/update',{method:'POST',headers:{'Content-Type':'application/json','x-deploy-key':key},body:JSON.stringify({...body,deployKey:key})});
-    const d=await r.json();
-    if(!r.ok)throw new Error(d.error||'Update failed');
-    toast('Settings saved!','ok');
-  }catch(err){me.innerHTML='<i class="fa fa-circle-exclamation"></i> '+err.message;me.classList.add('on');}
+async function doCheck() {
+  const id = document.getElementById('check-id').value.trim().toUpperCase();
+  if (!id.startsWith('REDX') || id.length < 8) return showAlert('check-alert', '❌ Enter a valid Deploy ID (starts with REDX)', 'err');
+  showAlert('check-alert', '<span class="spin"></span>Looking up…', 'info');
+  try {
+    const r = await fetch(BASE + '/api/lookup/' + id);
+    const d = await r.json();
+    if (!d.success) return showAlert('check-alert', '❌ Deploy ID not found', 'err');
+    const statusIcon = d.status === 'online' ? '🟢' : '🔴';
+    showAlert('check-alert',
+      `${statusIcon} <strong>${d.status?.toUpperCase()}</strong><br>` +
+      `📱 Phone: +${d.phone}<br>` +
+      `🔑 ID: ${d.deployId}<br>` +
+      `📅 Since: ${new Date(d.createdAt).toLocaleDateString()}`,
+      d.status === 'online' ? 'ok' : 'err'
+    );
+  } catch { showAlert('check-alert', '❌ Connection failed', 'err'); }
 }
 
-async function userLogout(){
-  if(!currentKey){toast('Enter your deploy key first','er');return;}
-  if(!confirm('Logout and delete your bot session?'))return;
-  try{
-    const r=await fetch('/api/user/logout',{method:'POST',headers:{'Content-Type':'application/json','x-deploy-key':currentKey},body:JSON.stringify({deployKey:currentKey})});
-    const d=await r.json();
-    if(d.success){toast(d.message||'Logged out','ok');loadDash();}else throw new Error(d.error);
-  }catch(err){toast(err.message,'er');}
-}
+// Live uppercase for check-id
+document.getElementById('check-id').addEventListener('input', e => { e.target.value = e.target.value.toUpperCase(); });
 
-/* ADMIN */
-function initAdmin(){adTok?showAd():showAl();}
-function showAl(){g('al').style.display='';g('ad').style.display='none';}
-function showAd(){g('al').style.display='none';g('ad').style.display='';}
-async function af(url,method='GET',body=null,auth=true){
-  const h={'Content-Type':'application/json'};
-  if(auth&&adTok)h['x-admin-token']=adTok;
-  return fetch(url,{method,headers:h,body:body?JSON.stringify(body):undefined});
-}
-async function adminLogin(){
-  const u=g('au')?.value.trim(),p=g('ap')?.value;
-  const e=g('ale'); e.classList.remove('on');
-  if(!u||!p){e.innerHTML='<i class="fa fa-circle-exclamation"></i> Enter username and password';e.classList.add('on');return;}
-  try{
-    const r=await af('/api/admin/login','POST',{username:u,password:p},false);
-    const d=await r.json(); if(!r.ok)throw new Error(d.error||'Login failed');
-    adTok=d.token; localStorage.setItem('at',adTok);
-    showAd(); loadAov(); toast('Logged in','ok');
-  }catch(err){e.innerHTML='<i class="fa fa-circle-exclamation"></i> '+err.message;e.classList.add('on');}
-}
-async function adminLogout(){
-  try{await af('/api/admin/logout','POST');}catch{}
-  adTok=null; localStorage.removeItem('at'); showAl(); toast('Logged out','ok');
-}
-async function loadAov(){
-  try{
-    const r=await af('/api/admin/overview'); if(r.status===401){adminLogout();return;}
-    const d=await r.json();
-    sv('aa-d',d.stats.totalDeploys||0); sv('aa-p',d.stats.totalPairs||0); sv('aa-u',d.stats.totalUsers||0);
-    const up=d.stats.uptime||0,h=Math.floor(up/3600),m=Math.floor((up%3600)/60),s=up%60;
-    sv('aa-up',h?`${h}h ${m}m`:m?`${m}m ${s}s`:`${s}s`);
-    sv('ao-pl',d.platform||'—'); sv('ao-nd',d.nodeVersion||'—'); sv('ao-v',d.botVersion||'—'); sv('ao-au',d.adminUser||'—');
-    if(d.memUsage)sv('ao-mm',(d.memUsage.heapUsed/1048576).toFixed(1)+' MB');
-    sv('ao-cn',d.activeConnections||0);
-    const up2=d.stats.uptime||0,h2=Math.floor(up2/3600),m2=Math.floor((up2%3600)/60),s2=up2%60;
-    sv('ao-up',h2?`${h2}h ${m2}m`:m2?`${m2}m ${s2}s`:`${s2}s`);
-    const bs=await af('/api/admin/bot/status'); const bd=await bs.json();
-    const ac=g('ao-co'); ac.className='badge '+(bd.connected?'on':'off');ac.textContent=bd.connected?'Yes':'No';
-    sv('ao-nu',bd.botNumber?'+'+bd.botNumber:'—'); sv('ao-di',bd.deployId||'—'); sv('ao-cm',bd.commands||'—');
-  }catch{toast('Failed to load overview','er');}
-}
-async function loadConns(){
-  try{const r=await af('/api/admin/connections');if(r.status===401){adminLogout();return;}const d=await r.json();const tb=g('cn-tb');if(!d.connections?.length){tb.innerHTML='<tr><td colspan="2" style="text-align:center;padding:1.3rem;color:var(--faint)">No active connections</td></tr>';return;}tb.innerHTML=d.connections.map(c=>`<tr><td><span class="mono">${c.number}</span></td><td><span class="badge ${c.connected?'on':'off'}">${c.connected?'Online':'Offline'}</span></td></tr>`).join('');}catch{toast('Failed','er');}
-}
-async function loadAdeps(){
-  try{const r=await af('/api/admin/deploys');if(r.status===401){adminLogout();return;}const d=await r.json();const tb=g('dp-tb');if(!d.deploys?.length){tb.innerHTML='<tr><td colspan="6" style="text-align:center;padding:1.3rem;color:var(--faint)">No deploys</td></tr>';return;}tb.innerHTML=d.deploys.map(dep=>`<tr><td><span class="mono" style="color:var(--cyan);font-size:.68rem">${dep.id}</span></td><td><span class="mono" style="color:var(--gold);font-size:.62rem">${dep.deployKey?dep.deployKey.slice(0,8)+'...':'—'}</span></td><td>${dep.platform||'—'}</td><td>${dep.pairCount||0}</td><td style="font-size:.68rem">${dep.lastSeen?new Date(dep.lastSeen).toLocaleString():'—'}</td><td><button class="btn sm dg" onclick="rmDep('${dep.id}')">Remove</button></td></tr>`).join('');}catch{toast('Failed','er');}
-}
-async function rmDep(id){if(!confirm('Remove '+id+'?'))return;try{const r=await af('/api/admin/deploys/'+id,'DELETE');const d=await r.json();if(d.success){toast('Removed','ok');loadAdeps();}else throw new Error(d.error);}catch(e){toast(e.message,'er');}}
-async function loadSrvs(){
-  try{const r=await af('/api/admin/servers');if(r.status===401){adminLogout();return;}const d=await r.json();const tb=g('sv-tb');if(!d.servers?.length){tb.innerHTML='<tr><td colspan="5" style="text-align:center;padding:1.3rem;color:var(--faint)">No servers</td></tr>';return;}tb.innerHTML=d.servers.map(s=>`<tr><td><b>${s.name}</b></td><td><span class="badge go">${s.platform}</span></td><td><a href="${s.url}" target="_blank" style="color:var(--cyan);font-size:.74rem">${s.url.replace('https://','')}</a></td><td style="font-size:.68rem">${s.addedAt?new Date(s.addedAt).toLocaleDateString():'—'}</td><td><button class="btn sm dg" onclick="rmSrv('${s.id}')">Remove</button></td></tr>`).join('');}catch{toast('Failed','er');}
-}
-async function addSrv(){
-  const name=g('sn2')?.value.trim(),url=g('su')?.value.trim(),plat=g('spl')?.value,desc=g('sd2')?.value.trim();
-  if(!name||!url){toast('Name and URL required','er');return;}
-  try{const r=await af('/api/admin/servers','POST',{name,url,platform:plat,description:desc});const d=await r.json();if(d.success){toast('Server added!','ok');closeOv('modal-srv');loadSrvs();['sn2','su','sd2'].forEach(id=>{const e=g(id);if(e)e.value='';});}else throw new Error(d.error);}catch(e){toast(e.message,'er');}
-}
-async function rmSrv(id){if(!confirm('Remove server?'))return;try{const r=await af('/api/admin/servers/'+id,'DELETE');const d=await r.json();if(d.success){toast('Removed','ok');loadSrvs();}else throw new Error(d.error);}catch(e){toast(e.message,'er');}
-}
-async function botAct(action){
-  try{
-    const url=action==='reload'?'/api/reload':'/api/admin/bot/'+action;
-    const h={'Content-Type':'application/json','x-admin-token':adTok};
-    const r=await fetch(url,{method:'POST',headers:h});const d=await r.json();
-    toast(d.message||'Done','ok');if(action==='logout')updSt(false,'');
-  }catch(e){toast('Failed: '+e.message,'er');}
-}
-function cfm(action){
-  pendCfm=action;
-  const m={restart:{t:'🔄 Restart Bot',m:'Restarts Node.js. Sessions preserved.'},logout:{t:'⚠️ Force Logout All',m:'Deletes all sessions. Re-pairing required.'}};
-  const info=m[action]||{t:'Confirm',m:'Are you sure?'};
-  sv('cf-t',info.t); sv('cf-m',info.m); openOv('modal-cf');
-}
-async function execCfm(){closeOv('modal-cf');if(pendCfm){await botAct(pendCfm);pendCfm=null;}}
-async function updCreds(){
-  const cur=g('cr-c')?.value,user=g('cr-u')?.value.trim(),pass=g('cr-p')?.value;
-  const e=g('cr-e'); e.classList.remove('on');
-  if(!cur){e.innerHTML='<i class="fa fa-circle-exclamation"></i> Current password required';e.classList.add('on');return;}
-  try{const r=await af('/api/admin/settings/credentials','POST',{currentPassword:cur,newUsername:user||undefined,newPassword:pass||undefined});const d=await r.json();if(!r.ok)throw new Error(d.error);toast(d.message||'Updated','ok');['cr-c','cr-u','cr-p'].forEach(id=>{const e2=g(id);if(e2)e2.value='';});}catch(err){e.innerHTML='<i class="fa fa-circle-exclamation"></i> '+err.message;e.classList.add('on');}
-}
-function asec(n){
-  document.querySelectorAll('.as').forEach(s=>s.classList.remove('on'));
-  document.querySelectorAll('.an').forEach(b=>b.classList.remove('on'));
-  const sec=g('as-'+n);if(sec)sec.classList.add('on');
-  document.querySelectorAll('.an').forEach(b=>{if(b.onclick?.toString().includes("'"+n+"'"))b.classList.add('on');});
-  if(n==='ov')loadAov(); if(n==='cn')loadConns(); if(n==='dp')loadAdeps(); if(n==='sv')loadSrvs();
-}
-
-/* HELPERS */
-function g(id){return document.getElementById(id);}
-function sv(id,val){const e=g(id);if(e)e.textContent=val??'—';}
-function openOv(id){g(id)?.classList.add('open');}
-function closeOv(id){g(id)?.classList.remove('open');}
-document.querySelectorAll('.ov').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');}));
-let tT;
-function toast(msg,type=''){const t=g('toast');t.textContent=msg;t.className='toast on '+type;clearTimeout(tT);tT=setTimeout(()=>t.classList.remove('on'),3000);}
-
-setInterval(rs,15000);
-init();
+loadStats();
+setInterval(loadStats, 20000);
 </script>
 </body>
 </html>
