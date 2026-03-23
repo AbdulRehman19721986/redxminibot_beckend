@@ -1,6 +1,6 @@
 'use strict';
 /**
- * 🔥 REDXBOT302 — FINAL EDITION v5.2
+ * 🔥 REDXBOT302 — FINAL EDITION v5.2 (Fixed for Railway)
  * Full plugin system · Built‑in menus removed · Antidelete integrated · YTDownloader
  * Owner: Abdul Rehman Rajpoot (+923009842133)
  */
@@ -22,6 +22,36 @@ const {
   Browsers,
 } = require('@whiskeysockets/baileys');
 const P = require('pino');
+
+// ── SAFE LOAD OF OPTIONAL MODULES ───────────────────────────
+let antidelete = {
+  storeMessage: async () => {},
+  handleMessageRevocation: async () => {}
+};
+let ytDownloader = null; // not used, but kept for compatibility
+let GroupEvents = async () => {};
+
+try {
+  // If you have these files, they will be loaded; otherwise we use the dummy above
+  const ad = require('./lib/antidelete');
+  if (ad && typeof ad === 'object') antidelete = ad;
+} catch (e) {
+  console.warn('⚠️ antidelete module not found, using dummy.');
+}
+
+try {
+  const yd = require('./lib/ytdownloader');
+  if (yd) ytDownloader = yd;
+} catch (e) {
+  console.warn('⚠️ ytdownloader module not found, ignoring.');
+}
+
+try {
+  const ge = require('./lib/groupevents');
+  if (ge && typeof ge === 'function') GroupEvents = ge;
+} catch (e) {
+  console.warn('⚠️ groupevents module not found, group events disabled.');
+}
 
 // ── APP ─────────────────────────────────────────────────────
 const app    = express();
@@ -210,14 +240,6 @@ const loadPlugins = () => {
 loadPlugins();
 if (fs.existsSync(pluginsDir)) fs.watch(pluginsDir,(e,f)=>{ if(f&&f.endsWith('.js')){ console.log(`♻️ Reloading ${f}`); loadPlugins(); } });
 
-// ======================== ANTIDELETE INTEGRATION ========================
-const antidelete = require('./lib/antidelete'); // we'll create this file from the provided code
-// We'll also need to call storeMessage on every message and handleMessageRevocation on delete
-// This will be done inside the message handler.
-
-// ======================== YOUTUBE DOWNLOADER MODULE ========================
-const ytDownloader = require('./lib/ytdownloader'); // we'll create this from the provided class
-
 // ======================== INITIALIZATION FUNCTIONS ========================
 async function initConnection(number) {
   const sessionDir = path.join(SESSIONS_DIR, number);
@@ -316,8 +338,9 @@ function setupHandlers(conn, number, saveCreds) {
   conn.ev.on('messages.upsert', async ({ messages, type }) => {
     if (type !== 'notify') return;
     for (const msg of messages) {
-      // Store for antidelete
-      if (antidelete && antidelete.storeMessage) await antidelete.storeMessage(conn, msg);
+      // Store for antidelete (safe call)
+      if (antidelete && typeof antidelete.storeMessage === 'function')
+        await antidelete.storeMessage(conn, msg);
       try { await handleMessage(conn, msg, number); } catch(e){ console.error(`msg: ${e.message}`); }
     }
   });
@@ -326,17 +349,15 @@ function setupHandlers(conn, number, saveCreds) {
   conn.ev.on('messages.update', async (updates) => {
     for (const update of updates) {
       if (update.update?.protocolMessage?.type === 1) { // message deletion
-        if (antidelete && antidelete.handleMessageRevocation) {
+        if (antidelete && typeof antidelete.handleMessageRevocation === 'function')
           await antidelete.handleMessageRevocation(conn, update);
-        }
       }
     }
   });
 
-  // Group events
+  // Group events (safe call)
   conn.ev.on('group-participants.update', async (update) => {
     try {
-      const GroupEvents = require('./lib/groupevents');
       await GroupEvents(conn, update, {
         botName: BOT_NAME, ownerName: OWNER_NAME,
         menuImage: BOT_IMG, newsletterJid: NL_JID,
@@ -526,7 +547,7 @@ function getQuoted(msg) {
   return{message:{key:{remoteJid:ctx.participant||ctx.stanzaId,id:ctx.stanzaId,fromMe:false},message:ctx.quotedMessage},sender:ctx.participant};
 }
 
-// ======================== EXPRESS ROUTES (unchanged) ========================
+// ======================== EXPRESS ROUTES ========================
 app.get('/', (req,res)=>res.sendFile(path.join(__dirname,'public','index.html')));
 app.get('/api/status', (req,res)=>res.json(getStats()));
 app.get('/api/config', (req,res)=>res.json({
@@ -624,7 +645,7 @@ app.get('/api/deploy/:id',(req,res)=>{
   res.json({ id:d.id, platform:d.platform, pairCount:d.pairCount||0, createdAt:d.createdAt, lastSeen:d.lastSeen, numbers:d.numbers?.length||0 });
 });
 
-// ======================== USER DEPLOY KEY API (unchanged) ========================
+// ======================== USER DEPLOY KEY API ========================
 function deployKeyAuth(req, res, next) {
   const key = req.headers['x-deploy-key'] || req.body?.deployKey || req.query?.key;
   if (!key) return res.status(401).json({ error: 'Deploy key required' });
@@ -679,7 +700,7 @@ app.get('/api/user/status', deployKeyAuth, (req,res) => {
   res.json({ ...getStats(), deployKey: '***hidden***' });
 });
 
-// ======================== ADMIN ROUTES (unchanged) ========================
+// ======================== ADMIN ROUTES ========================
 const adminAuth = (req,res,next) => {
   const token = req.headers['x-admin-token']||req.query.token;
   if(!token||!adminSessions.has(token))return res.status(401).json({error:'Unauthorized'});
