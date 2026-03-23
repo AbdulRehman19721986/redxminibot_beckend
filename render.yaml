@@ -1,29 +1,13 @@
 services:
   - type: web
     name: redxbot302
-    runtime: node
-    buildCommand: "apt-get install -y ffmpeg 2>/dev/null; npm install --legacy-peer-deps --no-audit --no-fund"
-    startCommand: "node index.js"
+    env: node
+    buildCommand: npm install
+    startCommand: node index.js
     envVars:
-      - key: NODE_ENV
-        value: production
       - key: BOT_NAME
-        value: "🔥 REDXBOT302 🔥"
-      - key: OWNER_NUMBER
-        value: "923009842133"
-      - key: OWNER_NAME
-        value: "Abdul Rehman Rajpoot"
-      - key: CO_OWNER
-        value: "Muzamil Khan"
-      - key: CO_OWNER_NUM
-        value: "923183928892"
+        value: 🔥 REDXBOT302 🔥
       - key: PREFIX
         value: "."
       - key: BOT_MODE
-        value: "public"
-      - key: PORT
-        value: "3000"
-      - key: AUTO_STATUS_SEEN
-        value: "true"
-      - key: AUTO_STATUS_REACT
-        value: "true"
+        value: public
