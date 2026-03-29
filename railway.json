@@ -1,12 +1,14 @@
 {
   "$schema": "https://railway.app/railway.schema.json",
   "build": {
-    "builder": "NIXPACKS"
+    "builder": "NIXPACKS",
+    "buildCommand": "npm install --legacy-peer-deps --no-audit --no-fund"
   },
   "deploy": {
-    "startCommand": "node --max-old-space-size=512 --optimize-for-size --expose-gc index.js",
-    "healthcheckPath": "/ping",
+    "startCommand": "node index.js",
     "restartPolicyType": "ON_FAILURE",
-    "restartPolicyMaxRetries": 10
+    "restartPolicyMaxRetries": 10,
+    "healthcheckPath": "/health",
+    "healthcheckTimeout": 300
   }
 }

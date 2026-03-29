@@ -1,19 +1,29 @@
 {
-  "name": "redxbot-ultra",
-  "description": "REDXBOT ULTRA v6.0 — Ultra-Fast WhatsApp Bot by Abdul Rehman Rajpoot",
-  "repository": "https://github.com/AbdulRehman19721986/redxbot302",
-  "keywords": ["whatsapp", "bot", "baileys", "redxbot"],
+  "name": "REDXBOT302",
+  "description": "🔥 REDXBOT302 — WhatsApp Bot. No SESSION_ID needed. Just pair your number.",
+  "logo": "https://files.catbox.moe/s36b12.jpg",
+  "keywords": ["whatsapp", "bot", "baileys", "redxbot302"],
+  "repository": "https://github.com/AbdulRehman19721986/REDXBOT-MD",
   "env": {
-    "PAIRING_NUMBER": { "description": "Your WhatsApp phone number (e.g. 923009842133)", "required": true },
-    "BOT_NAME": { "description": "Bot display name", "value": "REDXBOT ULTRA" },
-    "BOT_OWNER": { "description": "Owner name", "value": "Abdul Rehman Rajpoot" },
-    "SECOND_OWNER": { "description": "Co-owner name", "value": "Muzamil Khan" },
-    "OWNER_NUMBER": { "description": "Owner WhatsApp number", "value": "923009842133" },
-    "PREFIX": { "description": "Command prefix", "value": "." },
-    "BOT_MODE": { "description": "public or private", "value": "public" },
-    "TIMEZONE": { "description": "Your timezone", "value": "Asia/Karachi" },
-    "CHANNEL_JID": { "description": "WhatsApp channel JID", "value": "120363405513439052@newsletter" }
+    "BOT_NAME":       { "description": "Bot display name",                           "value": "🔥 REDXBOT302 🔥",       "required": false },
+    "OWNER_NUMBER":   { "description": "Owner WhatsApp number (no + or spaces)",      "value": "923009842133",           "required": true  },
+    "OWNER_NAME":     { "description": "Owner display name",                          "value": "Abdul Rehman Rajpoot",   "required": false },
+    "PREFIX":         { "description": "Command prefix",                              "value": ".",                      "required": false },
+    "BOT_MODE":       { "description": "public or private",                           "value": "public",                 "required": false },
+    "ADMIN_USERNAME": { "description": "Admin panel username — CHANGE THIS!",         "value": "redx",                   "required": false },
+    "ADMIN_PASSWORD": { "description": "Admin panel password — CHANGE THIS!",         "value": "redx",                   "required": false },
+    "DEPLOY_ID":      { "description": "Custom deploy ID (optional, auto-generated)", "required": false },
+    "APP_URL":        { "description": "Your Heroku app URL for keep-alive ping",     "required": false },
+    "CO_OWNER":       { "description": "Co-owner name",                               "value": "Muzamil Khan",           "required": false },
+    "CO_OWNER_NUM":   { "description": "Co-owner WhatsApp number",                    "value": "923183928892",           "required": false },
+    "MENU_IMAGE":     { "description": "Menu thumbnail image URL",                    "value": "https://files.catbox.moe/s36b12.jpg", "required": false },
+    "AUTO_STATUS_SEEN":  { "description": "Auto view statuses (true/false)",          "value": "true",                   "required": false },
+    "AUTO_STATUS_REACT": { "description": "Auto react to statuses (true/false)",      "value": "true",                   "required": false }
   },
-  "formation": { "web": { "quantity": 1, "size": "basic" } },
-  "buildpacks": [{ "url": "heroku/nodejs" }]
+  "formation": { "web": { "quantity": 1, "size": "eco" } },
+  "buildpacks": [
+    { "url": "https://github.com/jonathanong/heroku-buildpack-ffmpeg-latest.git" },
+    { "url": "heroku/nodejs" }
+  ],
+  "stack": "heroku-22"
 }

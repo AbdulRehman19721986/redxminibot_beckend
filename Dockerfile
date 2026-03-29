@@ -1,49 +1,41 @@
+# ╔══════════════════════════════════════╗
+# ║   🔥 REDXBOT302 MINI — Dockerfile   ║
+# ║   Owner: Abdul Rehman Rajpoot        ║
+# ╚══════════════════════════════════════╝
+
 FROM node:20-slim
 
-# Install system dependencies including ffmpeg properly
+# Install git + ffmpeg + build tools (git is REQUIRED by npm/baileys)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    ffmpeg \
-    imagemagick \
-    webp \
     git \
+    ffmpeg \
     python3 \
-    build-essential \
+    python3-pip \
+    make \
+    g++ \
+    ca-certificates \
+    curl \
     && rm -rf /var/lib/apt/lists/*
-
-# Verify ffmpeg works
-RUN ffmpeg -version && echo "✅ ffmpeg OK"
 
 WORKDIR /app
 
-# Copy package.json first for layer caching
+# Copy package files FIRST for layer caching
 COPY package.json ./
 
-# Remove ffmpeg-static from package.json (we use system ffmpeg)
-RUN node -e "
-const pkg = JSON.parse(require('fs').readFileSync('package.json','utf8'));
-delete pkg.dependencies['ffmpeg-static'];
-delete pkg.dependencies['@ffmpeg-installer/ffmpeg'];
-require('fs').writeFileSync('package.json', JSON.stringify(pkg,null,2));
-console.log('package.json cleaned');
-"
+# Install deps — use --omit=dev (--production is deprecated and broken in Docker)
+RUN npm install --omit=dev --no-audit --no-fund --legacy-peer-deps
 
-# Set ffmpeg path to system binary
-ENV FFMPEG_PATH=/usr/bin/ffmpeg
-ENV FFMPEG_SKIP_INSTALL=1
-ENV PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
-ENV NODE_ENV=production
-
-# Install Node deps
-RUN npm install --force --no-package-lock --no-audit --no-fund --loglevel=error \
-    && npm cache clean --force
-
-# Copy source
+# Copy all project files
 COPY . .
 
-# Create temp dirs
-RUN mkdir -p temp tmp data session
+# Create required runtime directories
+RUN mkdir -p session temp data plugins public
 
+# Expose port
 EXPOSE 3000
 
-# Start with memory limits optimized for Heroku 512MB dyno
-CMD ["node", "--max-old-space-size=460", "--optimize-for-size", "--expose-gc", "index.js"]
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+  CMD curl -f http://localhost:3000/ || exit 1
+
+CMD ["node", "index.js"]
